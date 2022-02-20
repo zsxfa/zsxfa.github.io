@@ -921,11 +921,66 @@ git add .
 git commit -m 'init'
 ```
 
+添加远程仓库
 
+```shell
+git remote add origin git@github.com:zsxfa/zsxfa.github.io.git
+```
 
+push 到远程分支
 
+```shell
+git push origin develop
+```
 
+### 在别处使用
 
+首先要克隆下这个项目
+
+```
+git clone git@github.com:zsxfa/zsxfa.github.io.git
+```
+
+进入博客目录
+
+```
+cd zsxfa.github.io.git
+```
+
+切换到博客文件分支
+
+```
+git checkout -b develop origin/develop
+```
+
+安装hexo
+
+```
+npm install hexo --save
+```
+
+然后编辑、查看
+
+```
+hexo g    //编译
+hexo s    //浏览器查看 localhost:4000
+```
+
+提交 git，若在提交过程中出现 `ERROR Deployer not found: git` 可执行 `npm install hexo-deployer-git --save` 后重新提交。
+
+```
+hexo d
+```
+
+在写了新 markdown 文件后提交 git
+
+```
+git add .
+git commit -m '新增博客'
+git push origin develop
+```
+
+到此，我们以后只要写完博客发布后记得 push 一下就能实现备份了。
 
 
 
