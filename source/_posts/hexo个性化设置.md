@@ -196,6 +196,8 @@ https://cdn.jsdelivr.net/gh/你的用户名/你的仓库名/文件路径
 
 ## 添加音乐
 
+### 网易云外链
+
 1. 在网易云音乐中打开你想要插入的音乐页面，点击 **生成外联播放器**。
 
 2. 在网页中调整好播放器插件后，复制下方的HTML代码。以侧边栏为例，修改**blog\themes\next\layout\\_macro**的**sidebar.swig**文件，添加刚刚复制的外链代码，放在<aside class="sidebar">标签中
@@ -205,6 +207,61 @@ https://cdn.jsdelivr.net/gh/你的用户名/你的仓库名/文件路径
    ```
    
    ![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/19/1645275973.png)
+   
+   这种网易云音乐外链的方式有很多局限性，因此推荐使用aplayer
+
+### 使用aplayer
+
+Aplayer是一个开源的，网页端的播放器，这是它的[使用文档](https://aplayer.js.org/#/zh-Hans/)，这个播放器可以支持播放本地自定义的音频、歌词、专辑封面等等，但是由于我是想直接使用网络端的歌单，所以直接跳过了这一步，本地使用方法可以直接参考使用文档，写的很详细。
+
+接下来的重头戏是直接使用meting实现网络歌单，我是想在所有页面的固定位置显示这个播放模块，正好aplayer自带的吸底模式(翻译为fixed，有点难理解)符合我的要求，它会始终出现在网页的左下角，配合pjax实现不刷新内容,大赞！
+
+1. 添加依赖
+
+   找到主题的页面布局文件，\themes\next\layout\ _layoout.swig
+   首先在body中添加依赖：
+
+   ```html
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css"><!--APlayer的样式-->
+   <script src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script><!--APlayer的依赖-->
+   <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script><!--Meting的依赖-->
+   ```
+
+2. 这里我们指定了版本，因为meting的新版本和aplayer有奇怪的兼容性问题…
+   然后就是使用metingjs了，首先附一个官方的[使用文档](https://github.com/metowolf/MetingJS)，使用方法也非常的简单：
+
+   ```
+   <meting-js
+   	server="netease"
+       type="playlist"
+       autoplay=true 
+       fixed=true 
+       id="7267391672"> 
+   </meting-js>
+   ```
+
+   - server: 歌单的服务商，比如netease代表网易云，tencent代表qq音乐等等
+   - type: 类型，单曲或歌单
+   - autoplay: 打开网页自动播放
+   - fixed: 使用吸底模式
+   - id: 歌单的id，在网页端可以直接查看
+
+3. 保存，重启服务之后发现已经出现了吸底的浮窗
+
+#### pjax的配置
+
+1. 配置完aplayer，接下来就是配置跨页面不刷新了。由于我使用的是next主题，其实next主题已经想到了可能是用的pjax，所以我们只需要安装依赖，并且在config中启用即可。
+
+2. 首先安装依赖
+
+   ```shell
+   cd themes/next
+   git clone https://github.com/theme-next/theme-next-pjax source/lib/pjax
+   ```
+
+3. 然后我们只需要在next的_config.yml中找到pjax选项，将false改为true即可
+
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645444404.png)
 
 ## 添加动态背景
 
@@ -340,7 +397,7 @@ npm install hexo-tag-cloud
 
 2. tag页添加：
 
-   ##### 在themes/next/layout/page.swig中添加代码效果如下：
+   在themes/next/layout/page.swig中添加代码效果如下：
 
    ```shell
    {% if site.tags.length > 1 %}
@@ -421,6 +478,10 @@ tag_cloud:
 5. 在配置文件中把`use`后面改成我们复制在`live2d_models`文件夹里面的模型目录名称，这样我们就完成了修改
 
 ![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/20/1645359445.png)
+
+
+
+
 
 ## 添加鼠标点击效果
 
@@ -944,7 +1005,7 @@ git clone git@github.com:zsxfa/zsxfa.github.io.git
 进入博客目录
 
 ```
-cd zsxfa.github.io.git
+cd zsxfa.github.io
 ```
 
 切换到博客文件分支
@@ -982,23 +1043,318 @@ git push origin develop
 
 到此，我们以后只要写完博客发布后记得 push 一下就能实现备份了。
 
+## 添加彩色滚动变换字体
+
+在你想要添加彩色滚动变换字体的地方写入以下代码即可，其中文字可自行更改：
+
+```html
+<div id="binft"></div>
+  <script>
+    var binft = function (r) {
+      function t() {
+        return b[Math.floor(Math.random() * b.length)]
+      }  
+      function e() {
+        return String.fromCharCode(94 * Math.random() + 33)
+      }
+      function n(r) {
+        for (var n = document.createDocumentFragment(), i = 0; r > i; i++) {
+          var l = document.createElement("span");
+          l.textContent = e(), l.style.color = t(), n.appendChild(l)
+        }
+        return n
+      }
+      function i() {
+        var t = o[c.skillI];
+        c.step ? c.step-- : (c.step = g, c.prefixP < l.length ? (c.prefixP >= 0 && (c.text += l[c.prefixP]), c.prefixP++) : "forward" === c.direction ? c.skillP < t.length ? (c.text += t[c.skillP], c.skillP++) : c.delay ? c.delay-- : (c.direction = "backward", c.delay = a) : c.skillP > 0 ? (c.text = c.text.slice(0, -1), c.skillP--) : (c.skillI = (c.skillI + 1) % o.length, c.direction = "forward")), r.textContent = c.text, r.appendChild(n(c.prefixP < l.length ? Math.min(s, s + c.prefixP) : Math.min(s, t.length - c.skillP))), setTimeout(i, d)
+      }
+      var l = "",
+      o = ["一别都门三改火，天涯踏尽红尘。", "依然一笑作春温。","无波真古井，有节是秋筠。", "惆怅孤帆连夜发，送行淡月微云。","尊前不用翠眉颦。","人生如逆旅，我亦是行人。"].map(function (r) {
+      return r + ""
+      }),
+      a = 2,
+      g = 1,
+      s = 5,
+      d = 75,
+      b = ["rgb(110,64,170)", "rgb(150,61,179)", "rgb(191,60,175)", "rgb(228,65,157)", "rgb(254,75,131)", "rgb(255,94,99)", "rgb(255,120,71)", "rgb(251,150,51)", "rgb(226,183,47)", "rgb(198,214,60)", "rgb(175,240,91)", "rgb(127,246,88)", "rgb(82,246,103)", "rgb(48,239,130)", "rgb(29,223,163)", "rgb(26,199,194)", "rgb(35,171,216)", "rgb(54,140,225)", "rgb(76,110,219)", "rgb(96,84,200)"],
+      c = {
+        text: "",
+        prefixP: -s,
+        skillI: 0,
+        skillP: 0,
+        direction: "forward",
+        delay: a,
+        step: g
+      };
+      i()
+      };
+      binft(document.getElementById('binft'));
+  </script>
+```
+
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645432348.png)
+
+## 修改超链接的颜色
+
+打开`\themes\next\source\css\_common\components\post`文件夹下的`post.styl`,添加以下css样式：
+
+```css
+.post-body p a {
+  color: #00ff00;
+  border-bottom: none;
+  &:hover {
+    color: #fc6423;
+    text-decoration: underline;
+  }
+}
+```
+
+其中选择`.post-body` 是为了不影响标题，选择 `p` 是为了不影响首页“阅读全文”的显示样式,颜色可以自己定义。
+
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645446067.png)
+
+## 文章添加阴影效果
+
+打开`\themes\next\source\css\_common\components\post`文件夹下的`post.styl`,添加以下css样式：
+
+```css
+// 主页文章添加阴影效果
+ .post {
+   margin-top: 0px;
+   margin-bottom: 60px;
+   padding: 25px;
+   -webkit-box-shadow: 0 0 5px rgba(202, 203, 203, .5);
+   -moz-box-shadow: 0 0 5px rgba(202, 203, 204, .5);
+  }
+```
+
+## 在博客底部添加访问量
+
+打开`/themes/next/_config.yml`,找到`busuanzi`，修改为以下参数：
+
+```yaml
+busuanzi_count:
+  enable: true
+  total_visitors: true
+  total_visitors_icon: user
+  total_views: true
+  total_views_icon: eye
+```
+
+## 博客标题设置
+
+　　这个相关的设置在`blog/_config.yml`中修改，如下图所示：
+
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645447298.png)
+
+## 文章字数、阅读时长统计
+
+打开博客根目录，运行以下命令，安装插件
+
+复制
+
+```shell
+npm install hexo-symbols-count-time --save
+```
+
+然后修改博客配置文件，在末尾添加以下代码：
+
+复制
+
+```yaml
+symbols_count_time:
+  symbols: true                # 文章字数统计
+  time: true                   # 文章阅读时长
+  total_symbols: true          # 站点总字数统计
+  total_time: true             # 站点总阅读时长
+  exclude_codeblock: false     # 排除代码字数统计
+```
+
+　　最后在主题配置文件里面，找到`symbols_count_time`,修改成以下内容：
+
+复制
+
+```yaml
+symbols_count_time:
+  separated_meta: true     # 是否另起一行（true的话不和发表时间等同一行）
+  item_text_post: true     # 首页文章统计数量前是否显示文字描述（本文字数、阅读时长）
+  item_text_total: true    # 页面底部统计数量前是否显示文字描述（站点总字数、站点阅读时长）
+  awl: 1.5                 # Average Word Length
+  wpm: 100                 # Words Per Minute（每分钟阅读词数）
+  suffix: mins.
+```
+
+## 阅读进度条
+
+在主题配置文件中搜索`reading_progress`，找到如下代码段：
+
+```yaml
+# Reading progress bar
+reading_progress:
+  enable: true
+```
 
 
+将`enable`设为true来启用
 
+## 博客背景动画效果canvas_ribbon
 
+```shell
+git clone https://github.com/theme-next/theme-next-canvas-ribbon source/lib/canvas-ribbon
+```
 
+在主题配置文件中, 搜索: canvas_nest, 修改为自定义值即可.
 
+```yaml
+canvas_nest:
+  enable: false
+  onmobile: true
+  color: "0,0,255"
+  opacity: 0.5
+  zIndex: -1
+  count: 99
 
+three:
+  enable: false
+  delay: false
+  three_waves: true
+  canvas_lines: true
+  canvas_sphere: true
 
+canvas_ribbon:
+  enable: true
+  size: 300
+  alpha: 0.6
+  zIndex: -1
+```
 
+## 内容里的代码块新增复制按钮
 
+主题配置文件中
 
+```yaml
+codeblock:
+  copy_button:
+    enable: false      # 增加复制按钮的开关
+    show_result: false # 点击复制完后是否显示 复制成功 结果提示
+```
 
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645453024.png)
 
+## 文章原创申明
 
+```yaml
+creative_commons:
+  license: by-nc-sa
+  sidebar: false
+  post: true       # 默认显示版权信息
+  language:
+```
 
+## 添加背景图片
 
+设置背景图片
+将想要的背景图片放入` themes/next/source/images`。打开` themes/next/source/css/ _custom/custom.styl` 文件，这个是 Next 故意留给用户自己个性化定制一些样式的文件，添加以下代码即可：
 
+```css
+body {
+    background:url(/images/yourbackground.jpg);
+    background-repeat: no-repeat;
+    background-attachment:fixed; //不重复
+    background-size: cover;      //填充
+    background-position:50% 50%;
+}
+```
+
+background:url 为图片路径，也可以直接使用链接。
+background-repeat：若果背景图片不能全屏，那么是否平铺显示，充满屏幕
+background-attachment：背景是否随着网页上下滚动而滚动，fixed 为固定
+background-size：图片展示大小，这里设置 100%，100% 的意义为：如果背景图片不能全屏，那么是否通过拉伸的方式将背景强制拉伸至全屏显示。
+
+## 博客内容透明化
+
+NexT 主题的博客文章均是不透明的，这样读者就不能好好欣赏背景图片了，下面的方法可以使博客内容透明化：
+
+在 `themes/next/source/css/_custom/custom.styl` 中添加以下内容：
+
+```css
+//博客内容透明化
+//文章内容的透明度设置
+.content-wrap {
+  opacity: 0.9;
+}
+.content {
+	border-radius: 20px; //文章背景设置圆角
+	padding: 80px 30px 10px 30px;
+	background:rgba(255, 255, 255, 0.2) none repeat scroll !important;
+}
+
+//侧边框的透明度设置
+.sidebar {
+  opacity: 0.9;
+}
+
+//菜单栏的透明度设置
+.header-inner {
+  background: rgba(255,255,255,0.9);
+}
+
+//搜索框（local-search）的透明度设置
+.popup {
+  opacity: 0.9;
+}
+
+.tag-cloud-tags{
+	margin-top: 3%;
+}
+.tag-cloud a {
+	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,.12),
+	0 1px 2px rgba(0, 0, 0, .24);
+	-moz-box-shadow: 0 1px 3px rgba(0,0,0, .12),
+	0 1px 2px rgba(0,0,0, .24);
+	box-shadow: 0 1px 3px rgba(0, 0,0 .12),
+	0 1px 2px rgba(0,0,0, .24);
+	transition: .2s ease-out;
+	padding: 2px 10px;
+	margin: 8px;
+	background: #eee;
+	border-bottom: none;
+	border-radius: 12px;
+	box-shadow: 0 1px 3px #6f42c1, 0 1px 2px #d9534f;
+	display: inline-block;
+}
+.tag-cloud a:hover{
+	text-decoration: none;
+	background: #64ceaa;
+	color: #fff !important;
+	-webkit-box-shadow: 0 8px 16px 0 rgba(0,0,0,.2),
+	0 6px 20px 0 rgba(0, 0, 0, .19);
+	-moz-box-shadow: 0 8px 16px 0 rgba(0,0,0, .2),
+	0 6px 20px 0 rgba(0,0,0, .19);
+	box-shadow: 0 8px 16px 0 rgba(0, 0,0 .2),
+	0 6px 20px 0 rgba(0,0,0, .19);
+}
+```
+
+注意：其中 header-inner 不能使用 opacity 进行配置。因为 header-inner 包含 header.swig 中的所有内容。若使用 opacity 进行配置，子结点会出很多问题。
+
+无_custom/custom.styl 文件时，在根目录source下创建 _data文件夹创建styles.styl文件加入css代码，主题_config.yml 文件修改：
+
+```yaml
+custom_file_path:
+  #head: source/_data/head.swig
+  #header: source/_data/header.swig
+  #sidebar: source/_data/sidebar.swig
+  #postMeta: source/_data/post-meta.swig
+  #postBodyEnd: source/_data/post-body-end.swig
+  #footer: source/_data/footer.swig
+  #bodyEnd: source/_data/body-end.swig
+  #variable: source/_data/variables.styl
+  #mixin: source/_data/mixins.styl
+  style: source/_data/styles.styl
+```
+
+![desc](https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645454150.png)
 
 
 

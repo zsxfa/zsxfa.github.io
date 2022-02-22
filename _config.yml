@@ -5,7 +5,7 @@
 # Site
 title: zsxfa Blog
 subtitle: ''
-description: ''
+description: '我唯一感兴趣的事情，是求得内心的安宁'
 keywords: 编程、生活、音乐、影视
 author: 小Feng
 language: en
@@ -46,7 +46,7 @@ future: true
 highlight:
   enable: true
   line_number: true
-  auto_detect: false
+  auto_detect: true
   tab_replace: ''
   wrap: true
   hljs: false
@@ -148,4 +148,32 @@ live2d:
     react:
         opacityDefault: 0.7 # 模型透明度
         opacityOnHover: 0.2
-    
+
+#歌单页面
+# --------------------------------------------------------------
+# APlayer settings
+# --------------------------------------------------------------
+# enabled:  true/false   开启/关闭
+# id: song id / playlist id / album id / search keyword   歌曲ID、歌单ID、关键字
+# server: netease, tencent, kugou, xiami, baidu     音乐平台
+# type: song, playlist, album, search, artist  类型
+# auto: music link, support: netease, tencent, xiami
+# fixed: true/false   吸底模式
+# mini: true/false   迷你模式
+# autoplay: true/false   自动播放
+# theme: #eeeeee 主题颜色
+# loop: values: 'all', 'one', 'none' 循环播放
+# order: values: 'list', 'random' 是否随机播放
+# preload: values: 'none', 'metadata', 'auto' 预载入
+# volume:	0.7	默认音量，请注意播放器会记忆用户设置，用户手动设置音量后默认音量即失效
+# mutex: true/false	互斥，阻止多个播放器同时播放，当前播放器播放时暂停其他播放器
+# list-folded:	true/false	列表默认折叠
+# list-max-height:	340px	列表最大高度
+# storage-name:	metingjs	存储播放器设置的 localStorage key
+
+symbols_count_time:
+  symbols: true                # 文章字数统计
+  time: true                   # 文章阅读时长
+  total_symbols: true          # 站点总字数统计
+  total_time: true             # 站点总阅读时长
+  exclude_codeblock: false     # 排除代码字数统计

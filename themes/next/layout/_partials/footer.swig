@@ -82,16 +82,14 @@
 	siteTime();
 </script>
 <!--// 添加运行时间-->
-<br/>
+
 <!--添加全站字数统计-->
-<div class="theme-info">
+<!--<div class="theme-info">
   <div class="powered-by"></div>
   <span class="post-count">博客全站共{{ totalcount(site) }}字</span>
-</div>
+</div> -->
 <!--//添加全站字数统计-->
-<br/>
-<!--
-{%- if theme.footer.powered %}
+<!-- {%- if theme.footer.powered %}
   <div class="powered-by">
     {%- set next_site = 'https://theme-next.org' %}
     {%- if theme.scheme !== 'Gemini' %}
@@ -100,7 +98,7 @@
     {{- __('footer.powered', next_url('https://hexo.io', 'Hexo', {class: 'theme-link'}) + ' & ' + next_url(next_site, 'NexT.' + theme.scheme, {class: 'theme-link'})) }}
   </div>
 {%- endif %}-->
-
+<br/>
 {%- if theme.add_this_id %}
   <div class="addthis_inline_share_toolbox">
     <script src="//s7.addthis.com/js/300/addthis_widget.js#pubid={{ theme.add_this_id }}" async="async"></script>
