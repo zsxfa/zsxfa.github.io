@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.1.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/alien.png">
+  <meta name="google-site-verification" content="gNcq-rP8_Ahmh-wcxj35y0OipCZz-Q6PviyRJK5pHXw">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zsxfa.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false,"b2t":false,"scrollpercent":true},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"livere","storage":true,"lazyload":false,"nav":null,"activeClass":"livere"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="属性赋值可以用@Value和@PropertySource注解来实现…">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring注解原理--IOC3 属性赋值">
+<meta property="og:url" content="http://zsxfa.cn/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%203%20%E5%B1%9E%E6%80%A7%E8%B5%8B%E5%80%BC/index.html">
+<meta property="og:site_name">
+<meta property="og:description" content="属性赋值可以用@Value和@PropertySource注解来实现…">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643199851.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643201103.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643201518.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643202334.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643203032.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643203153.png">
+<meta property="article:published_time" content="2022-01-26T12:16:31.000Z">
+<meta property="article:modified_time" content="2022-02-16T03:53:48.220Z">
+<meta property="article:author" content="小Feng">
+<meta property="article:tag" content="IOC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643199851.png">
+
+<link rel="canonical" href="http://zsxfa.cn/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%203%20%E5%B1%9E%E6%80%A7%E8%B5%8B%E5%80%BC/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>spring注解原理--IOC3 属性赋值 | </title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K4J8QJV58T"></script>
+    <script data-pjax>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-K4J8QJV58T');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="null" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+	<a target="_blank" rel="noopener" href="https://github.com/zsxfa/zsxfa.github.io" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title"></h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://zsxfa.cn/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%203%20%E5%B1%9E%E6%80%A7%E8%B5%8B%E5%80%BC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/14/1642171382.png">
+      <meta itemprop="name" content="小Feng">
+      <meta itemprop="description" content="我唯一感兴趣的事情，是求得内心的安宁">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          spring注解原理--IOC3 属性赋值
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-01-26 20:16:31" itemprop="dateCreated datePublished" datetime="2022-01-26T20:16:31+08:00">2022-01-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-02-16 11:53:48" itemprop="dateModified" datetime="2022-02-16T11:53:48+08:00">2022-02-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Spring%E5%8E%9F%E7%90%86/" itemprop="url" rel="index"><span itemprop="name">Spring原理</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.1k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+	
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>属性赋值可以用@Value和@PropertySource注解来实现…<span id="more"></span></p>
+<p>[TOC]</p>
+<h1 id="Value"><a href="#Value" class="headerlink" title="@Value"></a>@Value</h1><p>Spring中的@Value注解可以为bean中的属性赋值。我们先来看看@Value注解的源码，<!--more-->如下所示。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643199851.png" alt="desc"></p>
+<p>从@Value注解的源码中我们可以看出，@Value注解可以标注在字段、方法、参数以及注解上，而且在程序运行期间生效。</p>
+<h2 id="Value注解的用法"><a href="#Value注解的用法" class="headerlink" title="@Value注解的用法"></a>@Value注解的用法</h2><h3 id="不通过配置文件注入属性的情况"><a href="#不通过配置文件注入属性的情况" class="headerlink" title="不通过配置文件注入属性的情况"></a>不通过配置文件注入属性的情况</h3><p>通过@Value注解将外部的值动态注入到bean的属性中，一般有如下这几种情况：</p>
+<p>注入普通字符串</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;lisi&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String name; <span class="comment">// 注入普通字符串</span></span><br></pre></td></tr></table></figure>
+
+
+<p>注入操作系统属性</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;#&#123;systemProperties[&#x27;os.name&#x27;]&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String systemPropertiesName; <span class="comment">// 注入操作系统属性</span></span><br></pre></td></tr></table></figure>
+
+
+<p>注入SpEL表达式结果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;#&#123; T(java.lang.Math).random() * 100.0 &#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> <span class="type">double</span> randomNumber; <span class="comment">//注入SpEL表达式结果</span></span><br></pre></td></tr></table></figure>
+
+<p>注入其他bean中属性的值</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;#&#123;person.name&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String username; <span class="comment">// 注入其他bean中属性的值，即注入person对象的name属性中的值</span></span><br></pre></td></tr></table></figure>
+
+<p>注入文件资源</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;classpath:/config.properties&quot;)</span></span><br><span class="line"><span class="keyword">private</span> Resource resourceFile; <span class="comment">// 注入文件资源</span></span><br></pre></td></tr></table></figure>
+
+<p>注入URL资源</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;http://www.baidu.com&quot;)</span></span><br><span class="line"><span class="keyword">private</span> Resource url; <span class="comment">// 注入URL资源</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="通过配置文件注入属性的情况"><a href="#通过配置文件注入属性的情况" class="headerlink" title="通过配置文件注入属性的情况"></a>通过配置文件注入属性的情况</h3><p>首先，我们可以在项目的src/main/resources目录下新建一个属性文件，例如person.properties，其内容如下：</p>
+<blockquote>
+<p>person.nickName=zsxfa</p>
+</blockquote>
+<p>然后，我们新建一个MainConfigOfPropertyValues配置类，并在该类上使用@PropertySource注解读取外部配置文件中的key/value并保存到运行的环境变量中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@PropertySource(value=&#123;&quot;classpath:/person.properties&quot;&#125;)</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainConfigOfPropertyValues</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Person <span class="title function_">person</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Person</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>加载完外部的配置文件以后，接着我们就可以使用<code>$&#123;key&#125;</code>取出配置文件中key所对应的值，并将其注入到bean的属性中了。</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">@Data</span></span><br><span class="line"><span class="variable">@NoArgsConstructor</span></span><br><span class="line"><span class="variable">@AllArgsConstructor</span></span><br><span class="line"><span class="variable">@Scope</span></span><br><span class="line">public class Person &#123;</span><br><span class="line"></span><br><span class="line">    <span class="variable">@Value</span>(<span class="string">&quot;Jachin&quot;</span>)</span><br><span class="line">    private String name;</span><br><span class="line">    <span class="variable">@Value</span>(<span class="string">&quot;#&#123;20-2&#125;&quot;</span>)</span><br><span class="line">    private Integer age;</span><br><span class="line"></span><br><span class="line">    <span class="variable">@Value</span>(<span class="string">&quot;$&#123;person.nickName&#125;&quot;</span>)</span><br><span class="line">    private String nickName; <span class="comment">// 昵称</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Value中-···-和-···-的区别"><a href="#Value中-···-和-···-的区别" class="headerlink" title="@Value中#{···}和${···}的区别"></a>@Value中#{···}和${···}的区别</h3><p>我们在这里提供一个测试属性文件，例如advance_value_inject.properties，大致的内容如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">server.name=server1,server2,server3</span><br><span class="line">author.name=liayun</span><br></pre></td></tr></table></figure>
+
+<p>然后，新建一个AdvanceValueInject类，并在该类上使用@PropertySource注解读取外部属性文件中的key/value并保存到运行的环境变量中，即加载外部的advance_value_inject.properties属性文件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="meta">@PropertySource(value=&#123;&quot;classpath:/advance_value_inject.properties&quot;&#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AdvanceValueInject</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ···</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上准备工作做好之后，下面我们就来看看<code>$&#123;···&#125;</code>的用法。</p>
+<h4 id="···-的用法"><a href="#···-的用法" class="headerlink" title="${···}的用法"></a>${···}的用法</h4><p>{}里面的内容必须符合SpEL表达式，通过@Value(“${spelDefault.value}”)我们可以获取属性文件中对应的值，但是如果属性文件中没有这个属性，那么就会报错。不过，我们可以通过赋予默认值来解决这个问题，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;$&#123;author.name:zsxfa&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String name;</span><br></pre></td></tr></table></figure>
+
+<p>上述代码的含义是表示向bean的属性中注入属性文件中的author.name属性所对应的值，如果属性文件中没有author.name这个属性，那么便向bean的属性中注入默认值zsxfa。</p>
+<h4 id="···-的用法-1"><a href="#···-的用法-1" class="headerlink" title="#{···}的用法"></a>#{···}的用法</h4><p>{}里面的内容同样也是必须符合SpEL表达式。例如</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SpEL：调用字符串Hello World的concat方法</span></span><br><span class="line"><span class="meta">@Value(&quot;#&#123;&#x27;Hello World&#x27;.concat(&#x27;!&#x27;)&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String helloWorld;</span><br><span class="line"></span><br><span class="line"><span class="comment">// SpEL：调用字符串的getBytes方法，然后再调用其length属性</span></span><br><span class="line"><span class="meta">@Value(&quot;#&#123;&#x27;Hello World&#x27;.bytes.length&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String helloWorldBytes;</span><br></pre></td></tr></table></figure>
+
+<h4 id="···-和-···-的混合使用"><a href="#···-和-···-的混合使用" class="headerlink" title="${···}和#{···}的混合使用"></a>${···}和#{···}的混合使用</h4><p><code>$&#123;···&#125;</code>和<code>#&#123;···&#125;</code>可以混合使用，例如</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SpEL：传入一个字符串，根据&quot;,&quot;切分后插入列表中， #&#123;&#125;和$&#123;&#125;配合使用时，注意不能反过来$&#123;&#125;在外面，而#&#123;&#125;在里面</span></span><br><span class="line"><span class="meta">@Value(&quot;#&#123;&#x27;$&#123;server.name&#125;&#x27;.split(&#x27;,&#x27;)&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> List&lt;String&gt; severs;</span><br></pre></td></tr></table></figure>
+
+<p>上面片段的代码的执行顺序：通过<code>$&#123;server.name&#125;</code>从属性文件中获取值并进行替换，然后就变成了执行SpEL表达式<code>&#123;&#39;server1,server2,server3&#39;.split(&#39;,&#39;)&#125;</code>。</p>
+<p>在上文中<code>#&#123;&#125;</code>在外面，<code>$&#123;&#125;</code>在里面可以执行成功，那么反过来是否可以呢？也就是说能否让<code>$&#123;&#125;</code>在外面，<code>#&#123;&#125;</code>在里面，就像下面这样呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SpEL：注意不能反过来，$&#123;&#125;在外面，而#&#123;&#125;在里面，因为这样会执行失败</span></span><br><span class="line"><span class="meta">@Value(&quot;$&#123;#&#123;&#x27;HelloWorld&#x27;.concat(&#x27;_&#x27;)&#125;&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> List&lt;String&gt; severs2;</span><br></pre></td></tr></table></figure>
+
+<p>答案是不能。因为Spring执行<code>$&#123;&#125;</code>的时机要早于<code>#&#123;&#125;</code>，当Spring执行外层的<code>$&#123;&#125;</code>时，内部的<code>#&#123;&#125;</code>为空，所以会执行失败！</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><ul>
+<li><code>#&#123;···&#125;</code>：用于执行SpEl表达式，并将内容赋值给属性</li>
+<li><code>$&#123;···&#125;</code>：主要用于加载外部属性文件中的值</li>
+<li><code>$&#123;···&#125;</code>和<code>#&#123;···&#125;</code>可以混合使用，但是必须<code>#&#123;&#125;</code>在外面，<code>$&#123;&#125;</code>在里面</li>
+</ul>
+<h1 id="PropertySource加载配置文件"><a href="#PropertySource加载配置文件" class="headerlink" title="@PropertySource加载配置文件"></a>@PropertySource加载配置文件</h1><h2 id="PropertySource注解概述"><a href="#PropertySource注解概述" class="headerlink" title="@PropertySource注解概述"></a>@PropertySource注解概述</h2><p>@PropertySource注解是Spring 3.1开始引入的配置类注解。通过@PropertySource注解可以将properties配置文件中的key/value存储到Spring的Environment中，Environment接口提供了方法去读取配置文件中的值，参数是properties配置文件中定义的key值。当然了，也可以使用@Value注解用<code>$&#123;&#125;占位符</code>为bean的属性注入值。</p>
+<p>我们来看一下@PropertySource注解的源代码，如下所示</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643201103.png" alt="desc"></p>
+<p>从@PropertySource的源码中可以看出，我们可以通过@PropertySource注解指定多个properties文件，使用的形式如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@PropertySource(value=&#123;&quot;classpath:/person.properties&quot;, &quot;classpath:/car.properties&quot;&#125;)</span></span><br></pre></td></tr></table></figure>
+
+<p>细心的读者可以看到，在@PropertySource注解的上面标注了如下的注解信息。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repeatable(PropertySources.class)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="PropertySources注解概述"><a href="#PropertySources注解概述" class="headerlink" title="@PropertySources注解概述"></a>@PropertySources注解概述</h2><p>首先，我们也来看下@PropertySources注解的源码，如下所示。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643201518.png" alt="desc"></p>
+<p>@PropertySources注解的源码比较简单，只有一个PropertySource[]数组类型的value属性，那我们如何使用@PropertySources注解指定配置文件呢？其实也很简单，使用如下所示的方式就可以了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@PropertySources(value=&#123;</span></span><br><span class="line"><span class="meta">    @PropertySource(value=&#123;&quot;classpath:/person.properties&quot;&#125;),</span></span><br><span class="line"><span class="meta">    @PropertySource(value=&#123;&quot;classpath:/car.properties&quot;&#125;),</span></span><br><span class="line"><span class="meta">&#125;)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="PropertySource注解案例"><a href="#PropertySource注解案例" class="headerlink" title="@PropertySource注解案例"></a>@PropertySource注解案例</h2><p>首先，我们在工程的src/main/resources目录下创建一个配置文件，例如person.properties，该文件的内容如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">person.nickName=zsxfa</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们在Person类中新增一个nickName字段，如下所示</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="meta">@NoArgsConstructor</span></span><br><span class="line"><span class="meta">@AllArgsConstructor</span></span><br><span class="line"><span class="meta">@Scope</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value(&quot;Jachin&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="meta">@Value(&quot;#&#123;20-2&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">private</span> Integer age;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String nickName; <span class="comment">// 昵称</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用XML配置文件方式获取值"><a href="#使用XML配置文件方式获取值" class="headerlink" title="使用XML配置文件方式获取值"></a>使用XML配置文件方式获取值</h3><p>如果我们需要在XML配置文件中获取person.properties文件中的值，那么我们首先需要在Spring的XML配置文件中引入context名称空间，并且使用context命名空间导入person.properties文件，之后在bean的属性字段中使用如下方式将person.properties文件中的值注入到Person类的nickName字段上。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;context:property-placeholder location=<span class="string">&quot;classpath:person.properties&quot;</span> /&gt;</span><br><span class="line"></span><br><span class="line">&lt;!-- 注册组件 --&gt;</span><br><span class="line">&lt;bean id=<span class="string">&quot;person&quot;</span> class=<span class="string">&quot;com.zsxfa.bean.Person&quot;</span>&gt;</span><br><span class="line">    &lt;property name=<span class="string">&quot;age&quot;</span> value=<span class="string">&quot;18&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">    &lt;property name=<span class="string">&quot;name&quot;</span> value=<span class="string">&quot;liayun&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">    &lt;property name=<span class="string">&quot;nickName&quot;</span> value=<span class="string">&quot;$&#123;person.nickName&#125;&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">&lt;/bean&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>此时，整个beans.xml文件的内容如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span><br><span class="line">&lt;beans xmlns=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span><br><span class="line">	xmlns:context=<span class="string">&quot;http://www.springframework.org/schema/context&quot;</span> xmlns:p=<span class="string">&quot;http://www.springframework.org/schema/p&quot;</span></span><br><span class="line">	xmlns:aop=<span class="string">&quot;http://www.springframework.org/schema/aop&quot;</span> xmlns:tx=<span class="string">&quot;http://www.springframework.org/schema/tx&quot;</span></span><br><span class="line">	xmlns:xsi=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span><br><span class="line">	xsi:schemaLocation=<span class="string">&quot;http://www.springframework.org/schema/beans </span></span><br><span class="line"><span class="string">						http://www.springframework.org/schema/beans/spring-beans-4.2.xsd</span></span><br><span class="line"><span class="string">						http://www.springframework.org/schema/context </span></span><br><span class="line"><span class="string">						http://www.springframework.org/schema/context/spring-context-4.2.xsd&quot;</span>&gt;</span><br><span class="line"></span><br><span class="line">	&lt;context:property-placeholder location=<span class="string">&quot;classpath:person.properties&quot;</span> /&gt;</span><br><span class="line">	</span><br><span class="line">	&lt;!-- 注册组件 --&gt;</span><br><span class="line">	&lt;bean id=<span class="string">&quot;person&quot;</span> class=<span class="string">&quot;com.zsxfa.bean.Person&quot;</span>&gt;</span><br><span class="line">		&lt;property name=<span class="string">&quot;age&quot;</span> value=<span class="string">&quot;18&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">		&lt;property name=<span class="string">&quot;name&quot;</span> value=<span class="string">&quot;liayun&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">		&lt;property name=<span class="string">&quot;nickName&quot;</span> value=<span class="string">&quot;$&#123;person.nickName&#125;&quot;</span>&gt;&lt;/property&gt;</span><br><span class="line">	&lt;/bean&gt;</span><br><span class="line">	</span><br><span class="line">&lt;/beans&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以将person.properties文件中的值注入到Person类的nickName字段上了。</p>
+<p>然后，我们在IOCTest_PropertyValue类中创建一个test02()测试方法，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test02</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">ClassPathXmlApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassPathXmlApplicationContext</span>(<span class="string">&quot;classpath:beans.xml&quot;</span>);</span><br><span class="line">    <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person) applicationContext.getBean(<span class="string">&quot;person&quot;</span>);</span><br><span class="line">    System.out.println(person);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着，运行以上test03()方法，输出的结果信息如下所示。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643202334.png" alt="desc"></p>
+<h3 id="使用注解方式获取值"><a href="#使用注解方式获取值" class="headerlink" title="使用注解方式获取值"></a>使用注解方式获取值</h3><p>如果我们使用注解的方式，那么该如何做呢？首先，我们需要在MainConfigOfPropertyValues配置类上添加一个@PropertySource注解，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@PropertySource(value=&#123;&quot;classpath:/person.properties&quot;&#125;)</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MainConfigOfPropertyValues</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Person <span class="title function_">person</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Person</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里使用的<code>@PropertySource(value=&#123;&quot;classpath:/person.properties&quot;&#125;)</code>注解就相当于XML配置文件中使用的<code>&lt;context:property-placeholder location=&quot;classpath:person.properties&quot; /&gt;</code>。</p>
+<p>然后，我们就可以在Person类的nickName字段上使用@Value注解来获取person.properties文件中的值了，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Value(&quot;$&#123;person.nickName&#125;&quot;)</span></span><br><span class="line"><span class="keyword">private</span> String nickName; <span class="comment">// 昵称</span></span><br></pre></td></tr></table></figure>
+
+<p>配置完成后，我们再次运行IOCTest_PropertyValue类中的test01()方法来看下输出结果，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">IOCTest_PropertyValue</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">AnnotationConfigApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AnnotationConfigApplicationContext</span>(MainConfigOfPropertyValues.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test01</span><span class="params">()</span> &#123;</span><br><span class="line">        printBeans(applicationContext);</span><br><span class="line">        System.out.println(<span class="string">&quot;===================&quot;</span>);</span><br><span class="line">        <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person) applicationContext.getBean(<span class="string">&quot;person&quot;</span>);</span><br><span class="line">        System.out.println(person);</span><br><span class="line">        <span class="comment">// 关闭容器</span></span><br><span class="line">        applicationContext.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">printBeans</span><span class="params">(AnnotationConfigApplicationContext applicationContext)</span> &#123;</span><br><span class="line">        String[] definitionNames = applicationContext.getBeanDefinitionNames();</span><br><span class="line">        <span class="keyword">for</span> (String name : definitionNames) &#123;</span><br><span class="line">            System.out.println(name);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643203032.png" alt="desc"></p>
+<h3 id="使用Environment获取值"><a href="#使用Environment获取值" class="headerlink" title="使用Environment获取值"></a>使用Environment获取值</h3><p>使用@PropertySource注解读取外部配置文件中的key/value之后，是将其保存到运行的环境变量中了，所以我们也可以通过运行环境来获取外部配置文件中的值。</p>
+<p>这里，我们可以稍微修改一下IOCTest_PropertyValue类中的test01()方法，即在其中添加一段使用Environment获取person.properties文件中的值的代码，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">test01</span><span class="params">()</span> &#123;</span><br><span class="line">    printBeans(applicationContext);</span><br><span class="line">    System.out.println(<span class="string">&quot;===================&quot;</span>);</span><br><span class="line">    <span class="type">Person</span> <span class="variable">person</span> <span class="operator">=</span> (Person) applicationContext.getBean(<span class="string">&quot;person&quot;</span>);</span><br><span class="line">    System.out.println(person);</span><br><span class="line">    </span><br><span class="line">    <span class="type">ConfigurableEnvironment</span> <span class="variable">environment</span> <span class="operator">=</span> applicationContext.getEnvironment();</span><br><span class="line">    <span class="type">String</span> <span class="variable">property</span> <span class="operator">=</span> environment.getProperty(<span class="string">&quot;person.nickName&quot;</span>);</span><br><span class="line">    System.out.println(property);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 关闭容器</span></span><br><span class="line">    applicationContext.close();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行以上test01()方法，可以看到输出的结果信息如下所示。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/26/1643203153.png" alt="desc"></p>
+
+    </div>
+
+	<span class="post-meta-item" >
+	  <span class="post-meta-item-icon">
+		<i class="fa fa-eye"></i>
+	  </span>
+	  阅读量: <span id="busuanzi_value_page_pv"></span>
+	</span>
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>小Feng
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="http://zsxfa.cn/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%203%20%E5%B1%9E%E6%80%A7%E8%B5%8B%E5%80%BC/" title="spring注解原理--IOC3 属性赋值">http://zsxfa.cn/2022/01/26/spring注解原理-IOC 3 属性赋值/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+	<div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">- - - - - - - - - - - - - 文 章 结 束 <i class="fa fa-whale"></i> 感 谢 阅 读 - - - - - - - - - - - - -</div>
+    
+</div>
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/IOC/" rel="tag"><i class="fa fa-tag"></i> IOC</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%202%20%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" rel="prev" title="spring注解原理-IOC2 生命周期">
+      <i class="fa fa-chevron-left"></i> spring注解原理-IOC2 生命周期
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/01/26/spring%E6%B3%A8%E8%A7%A3%E5%8E%9F%E7%90%86-IOC%204%20%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D/" rel="next" title="spring注解原理-IOC4 自动装配">
+      spring注解原理-IOC4 自动装配 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81NTU4MS8zMjA0OA=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+	
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+	
+  </div>
+
+  <aside class="sidebar">
+  
+    <div class="sidebar-inner">
+	
+		<meting-js
+			server="netease"
+			type="playlist"
+			autoplay=true 
+			fixed=true 
+			theme=#0000ff
+			id="7267391672"> 
+		</meting-js>
+	
+	  
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Value"><span class="nav-number">1.</span> <span class="nav-text">@Value</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Value%E6%B3%A8%E8%A7%A3%E7%9A%84%E7%94%A8%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">@Value注解的用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E9%80%9A%E8%BF%87%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%B3%A8%E5%85%A5%E5%B1%9E%E6%80%A7%E7%9A%84%E6%83%85%E5%86%B5"><span class="nav-number">1.1.1.</span> <span class="nav-text">不通过配置文件注入属性的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%B3%A8%E5%85%A5%E5%B1%9E%E6%80%A7%E7%9A%84%E6%83%85%E5%86%B5"><span class="nav-number">1.1.2.</span> <span class="nav-text">通过配置文件注入属性的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Value%E4%B8%AD-%C2%B7%C2%B7%C2%B7-%E5%92%8C-%C2%B7%C2%B7%C2%B7-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.1.3.</span> <span class="nav-text">@Value中#{···}和${···}的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%C2%B7%C2%B7%C2%B7-%E7%9A%84%E7%94%A8%E6%B3%95"><span class="nav-number">1.1.3.1.</span> <span class="nav-text">${···}的用法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%C2%B7%C2%B7%C2%B7-%E7%9A%84%E7%94%A8%E6%B3%95-1"><span class="nav-number">1.1.3.2.</span> <span class="nav-text">#{···}的用法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%C2%B7%C2%B7%C2%B7-%E5%92%8C-%C2%B7%C2%B7%C2%B7-%E7%9A%84%E6%B7%B7%E5%90%88%E4%BD%BF%E7%94%A8"><span class="nav-number">1.1.3.3.</span> <span class="nav-text">${···}和#{···}的混合使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.1.4.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#PropertySource%E5%8A%A0%E8%BD%BD%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">@PropertySource加载配置文件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#PropertySource%E6%B3%A8%E8%A7%A3%E6%A6%82%E8%BF%B0"><span class="nav-number">2.1.</span> <span class="nav-text">@PropertySource注解概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PropertySources%E6%B3%A8%E8%A7%A3%E6%A6%82%E8%BF%B0"><span class="nav-number">2.2.</span> <span class="nav-text">@PropertySources注解概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PropertySource%E6%B3%A8%E8%A7%A3%E6%A1%88%E4%BE%8B"><span class="nav-number">2.3.</span> <span class="nav-text">@PropertySource注解案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8XML%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%96%B9%E5%BC%8F%E8%8E%B7%E5%8F%96%E5%80%BC"><span class="nav-number">2.3.1.</span> <span class="nav-text">使用XML配置文件方式获取值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%B3%A8%E8%A7%A3%E6%96%B9%E5%BC%8F%E8%8E%B7%E5%8F%96%E5%80%BC"><span class="nav-number">2.3.2.</span> <span class="nav-text">使用注解方式获取值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8Environment%E8%8E%B7%E5%8F%96%E5%80%BC"><span class="nav-number">2.3.3.</span> <span class="nav-text">使用Environment获取值</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+	  
+	  
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="小Feng"
+      src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/14/1642171382.png">
+  <p class="site-author-name" itemprop="name">小Feng</p>
+  <div class="site-description" itemprop="description">我唯一感兴趣的事情，是求得内心的安宁</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zsxfa" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zsxfa" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:zsxfa125689@163.com" title="E-Mail → mailto:zsxfa125689@163.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/m0_46132054" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;m0_46132054" rel="noopener" target="_blank"><i class="fa fa-copyright fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+  <div class="">
+    <a target="_blank" class="social-link" href="/atom.xml" style="color: burlywood;">
+      <span class="icon">
+        <i class="fa fa-rss"></i>
+      </span>
+      <span class="label">RSS</span>
+    </a>
+  </div>
+
+
+
+      </div>
+	  
+	  <div id="binft"></div>
+  <script>
+    var binft = function (r) {
+      function t() {
+        return b[Math.floor(Math.random() * b.length)]
+      }  
+      function e() {
+        return String.fromCharCode(94 * Math.random() + 33)
+      }
+      function n(r) {
+        for (var n = document.createDocumentFragment(), i = 0; r > i; i++) {
+          var l = document.createElement("span");
+          l.textContent = e(), l.style.color = t(), n.appendChild(l)
+        }
+        return n
+      }
+      function i() {
+        var t = o[c.skillI];
+        c.step ? c.step-- : (c.step = g, c.prefixP < l.length ? (c.prefixP >= 0 && (c.text += l[c.prefixP]), c.prefixP++) : "forward" === c.direction ? c.skillP < t.length ? (c.text += t[c.skillP], c.skillP++) : c.delay ? c.delay-- : (c.direction = "backward", c.delay = a) : c.skillP > 0 ? (c.text = c.text.slice(0, -1), c.skillP--) : (c.skillI = (c.skillI + 1) % o.length, c.direction = "forward")), r.textContent = c.text, r.appendChild(n(c.prefixP < l.length ? Math.min(s, s + c.prefixP) : Math.min(s, t.length - c.skillP))), setTimeout(i, d)
+      }
+
+      var l = "",
+      o = ["一别都门三改火，天涯踏尽红尘。", "依然一笑作春温。","无波真古井，有节是秋筠。", "惆怅孤帆连夜发，送行淡月微云。","尊前不用翠眉颦。","人生如逆旅，我亦是行人。"].map(function (r) {
+      return r + ""
+      }),
+      a = 2,
+      g = 1,
+      s = 5,
+      d = 75,
+      b = ["rgb(110,64,170)", "rgb(150,61,179)", "rgb(191,60,175)", "rgb(228,65,157)", "rgb(254,75,131)", "rgb(255,94,99)", "rgb(255,120,71)", "rgb(251,150,51)", "rgb(226,183,47)", "rgb(198,214,60)", "rgb(175,240,91)", "rgb(127,246,88)", "rgb(82,246,103)", "rgb(48,239,130)", "rgb(29,223,163)", "rgb(26,199,194)", "rgb(35,171,216)", "rgb(54,140,225)", "rgb(76,110,219)", "rgb(96,84,200)"],
+      c = {
+        text: "",
+        prefixP: -s,
+        skillI: 0,
+        skillP: 0,
+        direction: "forward",
+        delay: a,
+        step: g
+      };
+      i()
+      };
+      binft(document.getElementById('binft'));
+  </script>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+	  
+
+    </div>
+	
+	
+  </aside>
+  
+  
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">小Feng</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">Symbols count total: </span>
+    <span title="Symbols count total">329k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">Reading time total &asymp;</span>
+    <span title="Reading time total">4:59</span>
+</div>
+
+<!--添加运行时间-->
+<span id="sitetime"></span>
+<script language=javascript>
+	function siteTime(){
+		window.setTimeout("siteTime()", 1000);
+		var seconds = 1000;
+		var minutes = seconds * 60;
+		var hours = minutes * 60;
+		var days = hours * 24;
+		var years = days * 365;
+		var today = new Date();
+		var todayYear = today.getFullYear();
+		var todayMonth = today.getMonth()+1;
+		var todayDate = today.getDate();
+		var todayHour = today.getHours();
+		var todayMinute = today.getMinutes();
+		var todaySecond = today.getSeconds();
+		/* 
+      Date.UTC() -- 返回date对象距世界标准时间(UTC)1970年1月1日午夜之间的毫秒数(时间戳)
+      year - 作为date对象的年份，为4位年份值
+      month - 0-11之间的整数，做为date对象的月份
+      day - 1-31之间的整数，做为date对象的天数
+      hours - 0(午夜24点)-23之间的整数，做为date对象的小时数
+      minutes - 0-59之间的整数，做为date对象的分钟数
+      seconds - 0-59之间的整数，做为date对象的秒数
+      microseconds - 0-999之间的整数，做为date对象的毫秒数
+     */
+		var t1 = Date.UTC(2022,01,10,20,00,00); //北京时间2018-2-13 00:00:00
+		var t2 = Date.UTC(todayYear,todayMonth,todayDate,todayHour,todayMinute,todaySecond);
+		var diff = t2-t1;
+		var diffYears = Math.floor(diff/years);
+		var diffDays = Math.floor((diff/days)-diffYears*365);
+		var diffHours = Math.floor((diff-(diffYears*365+diffDays)*days)/hours);
+		var diffMinutes = Math.floor((diff-(diffYears*365+diffDays)*days-diffHours*hours)/minutes);
+		var diffSeconds = Math.floor((diff-(diffYears*365+diffDays)*days-diffHours*hours-diffMinutes*minutes)/seconds);
+		document.getElementById("sitetime").innerHTML=" 本站已运行"+/*diffYears+" 年 "+*/diffDays+" 天 "+diffHours+" 小时 "+diffMinutes+" 分钟 "+diffSeconds+" 秒";
+	}
+	siteTime();
+</script>
+<!--// 添加运行时间-->
+
+<!-- 新增访客统计代码 -->
+<div class="busuanzi-count">
+	<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span >
+		本站总访问量<span id="busuanzi_value_site_pv"></span>次
+	</span>
+	<span class="post-meta-divider">|</span>
+	<span >
+		本站访客数<span id="busuanzi_value_site_uv"></span>人次
+	</span>
+</div>
+<!-- 新增访客统计代码 END-->
+
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+    </div>
+  
+
+<script type="text/javascript"
+color="0,0,255" opacity='0.7' zIndex="-1" count="99" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+
+
+
+<!-- 页面点击小红心 
+<script type="text/javascript" src="/js/heart.js"></script> -->
+<!-- 页面点击烟花爆炸 -->
+<canvas class="fireworks" style="position: fixed;left: 0;top: 0;z-index: 1; pointer-events: none;" ></canvas> 
+<script type="text/javascript" src="//cdn.bootcss.com/animejs/2.2.0/anime.min.js"></script> 
+<script type="text/javascript" src="/js/firework.js"></script>
+
+<!-- 音乐播放 -->
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css"><!--APlayer的样式-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/zsxfa/CDN/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script><!--APlayer的依赖-->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script><!--Meting的依赖-->
+
+<!-- 样式一（鼠标点击更换样式） -->
+<script src="https://g.joyinshare.com/hc/ribbon.min.js" type="text/javascript"></script>
+<!-- 样式二（飘动的彩带） -->
+<script src="https://g.joyinshare.com/hc/piao.js" type="text/javascript"></script>
+
+</body>
+<!-- 页面恶搞-->
+<script type="text/javascript" src="\js\funny.js"></script> 
+</html>
