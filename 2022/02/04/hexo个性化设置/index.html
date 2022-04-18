@@ -59,7 +59,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/23/1645601753.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/23/1645602020.png">
 <meta property="article:published_time" content="2022-02-04T14:54:02.000Z">
-<meta property="article:modified_time" content="2022-04-03T08:27:42.666Z">
+<meta property="article:modified_time" content="2022-04-18T01:01:59.534Z">
 <meta property="article:author" content="小Feng">
 <meta property="article:tag" content="Hexo">
 <meta name="twitter:card" content="summary">
@@ -234,7 +234,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/14/1642171382.png">
       <meta itemprop="name" content="小Feng">
-      <meta itemprop="description" content="我唯一感兴趣的事情，是求得内心的安宁">
+      <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -259,7 +259,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2022-04-03 16:27:42" itemprop="dateModified" datetime="2022-04-03T16:27:42+08:00">2022-04-03</time>
+                <time title="Modified: 2022-04-18 09:01:59" itemprop="dateModified" datetime="2022-04-18T09:01:59+08:00">2022-04-18</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -589,6 +589,7 @@
 
 <p>到此，我们以后只要写完博客发布后记得 push 一下就能实现备份了。</p>
 <h2 id="添加彩色滚动变换字体"><a href="#添加彩色滚动变换字体" class="headerlink" title="添加彩色滚动变换字体"></a>添加彩色滚动变换字体</h2><p>在你想要添加彩色滚动变换字体的地方写入以下代码即可，其中文字可自行更改：</p>
+<p>在<code>D:\Blogs\blog\themes\next\layout\_macro\sidebar.swig</code>中</p>
 <figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;binft&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> binft = <span class="keyword">function</span> (<span class="params">r</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">function</span> <span class="title function_">t</span>(<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">return</span> b[<span class="title class_">Math</span>.<span class="title function_">floor</span>(<span class="title class_">Math</span>.<span class="title function_">random</span>() * b.<span class="property">length</span>)]</span></span><br><span class="line"><span class="language-javascript">      &#125;  </span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">function</span> <span class="title function_">e</span>(<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">return</span> <span class="title class_">String</span>.<span class="title function_">fromCharCode</span>(<span class="number">94</span> * <span class="title class_">Math</span>.<span class="title function_">random</span>() + <span class="number">33</span>)</span></span><br><span class="line"><span class="language-javascript">      &#125;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">function</span> <span class="title function_">n</span>(<span class="params">r</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">for</span> (<span class="keyword">var</span> n = <span class="variable language_">document</span>.<span class="title function_">createDocumentFragment</span>(), i = <span class="number">0</span>; r &gt; i; i++) &#123;</span></span><br><span class="line"><span class="language-javascript">          <span class="keyword">var</span> l = <span class="variable language_">document</span>.<span class="title function_">createElement</span>(<span class="string">&quot;span&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">          l.<span class="property">textContent</span> = <span class="title function_">e</span>(), l.<span class="property">style</span>.<span class="property">color</span> = <span class="title function_">t</span>(), n.<span class="title function_">appendChild</span>(l)</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">return</span> n</span></span><br><span class="line"><span class="language-javascript">      &#125;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">function</span> <span class="title function_">i</span>(<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">var</span> t = o[c.<span class="property">skillI</span>];</span></span><br><span class="line"><span class="language-javascript">        c.<span class="property">step</span> ? c.<span class="property">step</span>-- : (c.<span class="property">step</span> = g, c.<span class="property">prefixP</span> &lt; l.<span class="property">length</span> ? (c.<span class="property">prefixP</span> &gt;= <span class="number">0</span> &amp;&amp; (c.<span class="property">text</span> += l[c.<span class="property">prefixP</span>]), c.<span class="property">prefixP</span>++) : <span class="string">&quot;forward&quot;</span> === c.<span class="property">direction</span> ? c.<span class="property">skillP</span> &lt; t.<span class="property">length</span> ? (c.<span class="property">text</span> += t[c.<span class="property">skillP</span>], c.<span class="property">skillP</span>++) : c.<span class="property">delay</span> ? c.<span class="property">delay</span>-- : (c.<span class="property">direction</span> = <span class="string">&quot;backward&quot;</span>, c.<span class="property">delay</span> = a) : c.<span class="property">skillP</span> &gt; <span class="number">0</span> ? (c.<span class="property">text</span> = c.<span class="property">text</span>.<span class="title function_">slice</span>(<span class="number">0</span>, -<span class="number">1</span>), c.<span class="property">skillP</span>--) : (c.<span class="property">skillI</span> = (c.<span class="property">skillI</span> + <span class="number">1</span>) % o.<span class="property">length</span>, c.<span class="property">direction</span> = <span class="string">&quot;forward&quot;</span>)), r.<span class="property">textContent</span> = c.<span class="property">text</span>, r.<span class="title function_">appendChild</span>(<span class="title function_">n</span>(c.<span class="property">prefixP</span> &lt; l.<span class="property">length</span> ? <span class="title class_">Math</span>.<span class="title function_">min</span>(s, s + c.<span class="property">prefixP</span>) : <span class="title class_">Math</span>.<span class="title function_">min</span>(s, t.<span class="property">length</span> - c.<span class="property">skillP</span>))), <span class="built_in">setTimeout</span>(i, d)</span></span><br><span class="line"><span class="language-javascript">      &#125;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">var</span> l = <span class="string">&quot;&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">      o = [<span class="string">&quot;一别都门三改火，天涯踏尽红尘。&quot;</span>, <span class="string">&quot;依然一笑作春温。&quot;</span>,<span class="string">&quot;无波真古井，有节是秋筠。&quot;</span>, <span class="string">&quot;惆怅孤帆连夜发，送行淡月微云。&quot;</span>,<span class="string">&quot;尊前不用翠眉颦。&quot;</span>,<span class="string">&quot;人生如逆旅，我亦是行人。&quot;</span>].<span class="title function_">map</span>(<span class="keyword">function</span> (<span class="params">r</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">      <span class="keyword">return</span> r + <span class="string">&quot;&quot;</span></span></span><br><span class="line"><span class="language-javascript">      &#125;),</span></span><br><span class="line"><span class="language-javascript">      a = <span class="number">2</span>,</span></span><br><span class="line"><span class="language-javascript">      g = <span class="number">1</span>,</span></span><br><span class="line"><span class="language-javascript">      s = <span class="number">5</span>,</span></span><br><span class="line"><span class="language-javascript">      d = <span class="number">75</span>,</span></span><br><span class="line"><span class="language-javascript">      b = [<span class="string">&quot;rgb(110,64,170)&quot;</span>, <span class="string">&quot;rgb(150,61,179)&quot;</span>, <span class="string">&quot;rgb(191,60,175)&quot;</span>, <span class="string">&quot;rgb(228,65,157)&quot;</span>, <span class="string">&quot;rgb(254,75,131)&quot;</span>, <span class="string">&quot;rgb(255,94,99)&quot;</span>, <span class="string">&quot;rgb(255,120,71)&quot;</span>, <span class="string">&quot;rgb(251,150,51)&quot;</span>, <span class="string">&quot;rgb(226,183,47)&quot;</span>, <span class="string">&quot;rgb(198,214,60)&quot;</span>, <span class="string">&quot;rgb(175,240,91)&quot;</span>, <span class="string">&quot;rgb(127,246,88)&quot;</span>, <span class="string">&quot;rgb(82,246,103)&quot;</span>, <span class="string">&quot;rgb(48,239,130)&quot;</span>, <span class="string">&quot;rgb(29,223,163)&quot;</span>, <span class="string">&quot;rgb(26,199,194)&quot;</span>, <span class="string">&quot;rgb(35,171,216)&quot;</span>, <span class="string">&quot;rgb(54,140,225)&quot;</span>, <span class="string">&quot;rgb(76,110,219)&quot;</span>, <span class="string">&quot;rgb(96,84,200)&quot;</span>],</span></span><br><span class="line"><span class="language-javascript">      c = &#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">text</span>: <span class="string">&quot;&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">prefixP</span>: -s,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">skillI</span>: <span class="number">0</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">skillP</span>: <span class="number">0</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">direction</span>: <span class="string">&quot;forward&quot;</span>,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">delay</span>: a,</span></span><br><span class="line"><span class="language-javascript">        <span class="attr">step</span>: g</span></span><br><span class="line"><span class="language-javascript">      &#125;;</span></span><br><span class="line"><span class="language-javascript">      <span class="title function_">i</span>()</span></span><br><span class="line"><span class="language-javascript">      &#125;;</span></span><br><span class="line"><span class="language-javascript">      <span class="title function_">binft</span>(<span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;binft&#x27;</span>));</span></span><br><span class="line"><span class="language-javascript">  </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p><img src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/02/21/1645432348.png" alt="desc"></p>
@@ -892,14 +893,14 @@
     <img class="site-author-image" itemprop="image" alt="小Feng"
       src="https://cdn.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/01/14/1642171382.png">
   <p class="site-author-name" itemprop="name">小Feng</p>
-  <div class="site-description" itemprop="description">我唯一感兴趣的事情，是求得内心的安宁</div>
+  <div class="site-description" itemprop="description"></div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -912,7 +913,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -963,7 +964,7 @@
       }
 
       var l = "",
-      o = ["一别都门三改火，天涯踏尽红尘。", "依然一笑作春温。","无波真古井，有节是秋筠。", "惆怅孤帆连夜发，送行淡月微云。","尊前不用翠眉颦。","人生如逆旅，我亦是行人。"].map(function (r) {
+      o = ["人生如逆旅，我亦是行人。"].map(function (r) {
       return r + ""
       }),
       a = 2,
@@ -1021,13 +1022,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">Symbols count total: </span>
-    <span title="Symbols count total">331k</span>
+    <span title="Symbols count total">350k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">Reading time total &asymp;</span>
-    <span title="Reading time total">5:01</span>
+    <span title="Reading time total">5:18</span>
 </div>
 
 <!--添加运行时间-->
