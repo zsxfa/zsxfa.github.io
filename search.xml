@@ -7902,4 +7902,286 @@
         <tag>扫盲 基本概念</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Bomb Lab</title>
+    <url>/2022/06/09/Bomb-Lab/</url>
+    <content><![CDATA[<h1 id="二进制炸弹实验"><a href="#二进制炸弹实验" class="headerlink" title="二进制炸弹实验"></a>二进制炸弹实验</h1><p>最近看了计算机系统基础实验这门课程，做了Bomb Lab的实验，然后做做相应的总结。</p>
+<span id="more"></span>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>一个二进制炸弹是一个 Linux 可执行程序，包含了多个阶段（又称为层次、关卡）。在炸弹程序运行的每个阶段要求输入一个特定字符串，如果该输入字符串符合程序的要求，该阶段的炸弹就被拆除了，否则炸弹“爆炸——即打印输出“BOOM!!!”的提示。 </p>
+<p><strong>每个炸弹阶段考察了程序与数据的机器级表示的不同方面，难度逐级递增：</strong> </p>
+<ul>
+<li>阶段 0：字符串比较</li>
+<li>阶段 1：浮点数表示</li>
+<li>阶段 2：循环</li>
+<li>阶段 3：条件/分支</li>
+<li>阶段 4：递归调用和栈</li>
+<li>阶段 5：指针</li>
+<li>阶段 6：链表/指针/结构</li>
+<li>另外还有一个隐藏阶段作为阶段 7，只有在阶段 4 的拆解字符串后附加一特定字符串后，才能在实验最后进入隐藏阶段。</li>
+</ul>
+<p>实验的目标是拆除尽可能多的炸弹关卡——分析获得尽可能多的正确拆解字符串。 </p>
+<h2 id="实验数据"><a href="#实验数据" class="headerlink" title="实验数据"></a>实验数据</h2><p><a href="http://cs.nju.edu.cn/sufeng/course/mooc/0809NJU064_bomblab.tar">http://cs.nju.edu.cn/sufeng/course/mooc/0809NJU064_bomblab.tar</a> </p>
+<p>可在 Linux 实验环境中使用命令“tar xvf 0809NJU064_bomblab.tar”将其中包含的文件提取到当前目录中。该 tar 文件中包含如下实验所需文件： </p>
+<ul>
+<li>bomb：二进制炸弹可执行程序</li>
+<li>bomb.c：包含 bomb 程序中 main 函数的 C 语言程序框架</li>
+</ul>
+<h2 id="实验工具"><a href="#实验工具" class="headerlink" title="实验工具"></a>实验工具</h2><p>完成二进制炸弹拆除任务，可使用 objdump 工具程序反汇编可执行炸弹程序，并使用gdb 工具程序单步跟踪每一阶段的机器指令，从中理解每一指令的行为和作用，进而推断拆除炸弹所需的目标字符串的内容组成。例如，可在每一阶段的起始指令前和引爆炸弹的函数调用指令前设置断点。 </p>
+<h3 id="GDB"><a href="#GDB" class="headerlink" title="GDB"></a>GDB</h3><p>为从二进制炸弹可执行程序”bomb“中找出触发炸弹爆炸的条件，可使用 GDB 程序帮助对程序的分析。GDB 是 GNU 开源组织发布的一个强大的交互式程序调试工具。一般来说，GDB 可帮助完成以下几方面的调试工作（更详细描述可参看 GDB 文档和相关资料）： </p>
+<ul>
+<li>装载、启动被调试的程序</li>
+<li>使被调试程序在指定的调试断点处中断执行，以方便查看程序变量、寄存器、栈内容等程序运行的现场数据</li>
+<li>动态改变程序的执行环境，如修改变量的值</li>
+</ul>
+<h3 id="objdump"><a href="#objdump" class="headerlink" title="objdump"></a>objdump</h3><p>反汇编二进制炸弹程序，获得其中汇编指令供分析</p>
+<ul>
+<li><p><code>objdump -d bomb</code>       输出bomb程序的反汇编结果</p>
+</li>
+<li><p><code>objdump -d bomb &gt; bomb.s</code> 获得bomb程序的反汇编结果并保存于文本文件bomb.s中供分析</p>
+<ul>
+<li>–d 选项：对二进制程序中的机器指令代码进行反汇编。通过分析汇编源代码可以发现bomb 程序是如何运行的</li>
+</ul>
+</li>
+<li><p><code>objdump -t bomb</code> 打印bomb程序的符号表，其中包含bomb中所有函数、全局变量的名称和存储地址</p>
+<ul>
+<li>–t 选项：打印指定二进制程序的符号表，其中包含了程序中的函数、全局变量的名称和存储地址</li>
+</ul>
+</li>
+</ul>
+<h3 id="strings"><a href="#strings" class="headerlink" title="strings"></a>strings</h3><p>该命令显示二进制程序中的所有可打印字符串 </p>
+<h2 id="反汇编代码"><a href="#反汇编代码" class="headerlink" title="反汇编代码"></a>反汇编代码</h2><ol>
+<li><p>在命令行执行以下命令，将汇编代码重定向到bomb.s文件中</p>
+<p>.s结尾代表汇编代码，未进行预处理</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">objdump -d bomb &gt; bomb.s</span><br></pre></td></tr></table></figure></li>
+<li><p>可以使用任何文本查看工具打开bomb.s文件，内容就是反汇编的结果</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">less bomb.s</span><br></pre></td></tr></table></figure></li>
+<li><p>在bomb.s中搜索phase_0函数</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">/phase_0</span><br></pre></td></tr></table></figure>
+
+<p>使用n(next)和p(pervious)查找上一个和下一个</p>
+<p>使用q退出查看模式</p>
+</li>
+</ol>
+<h3 id="反汇编代码的理解"><a href="#反汇编代码的理解" class="headerlink" title="反汇编代码的理解"></a>反汇编代码的理解</h3><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/10-52-50-20220605105249-132f74.png"></p>
+<h3 id="过程栈帧及入口参数的位置"><a href="#过程栈帧及入口参数的位置" class="headerlink" title="过程栈帧及入口参数的位置"></a>过程栈帧及入口参数的位置</h3><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/10-59-13-20220605105912-fcaa45.png"></p>
+<h1 id="阶段-0：字符串比较"><a href="#阶段-0：字符串比较" class="headerlink" title="阶段 0：字符串比较"></a>阶段 0：字符串比较</h1><h2 id="1-对二进制炸弹程序进行反汇编"><a href="#1-对二进制炸弹程序进行反汇编" class="headerlink" title="1.对二进制炸弹程序进行反汇编"></a>1.对二进制炸弹程序进行反汇编</h2><figure class="highlight mipsasm"><table><tr><td class="code"><pre><span class="line">objdump -d <span class="keyword">bomb </span>&gt; <span class="keyword">bomb.s</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="2-对函数的汇编指令代码进行分析"><a href="#2-对函数的汇编指令代码进行分析" class="headerlink" title="2.对函数的汇编指令代码进行分析"></a>2.对函数的汇编指令代码进行分析</h2><p><strong>定位到phase_0函数上</strong>，分析<code>test,je,call</code>代码发现</p>
+<p>为避免执行<code>0x8049471</code>处对引爆炸弹函数的调用指令，<code>je</code>指令的测试条件应被满足，即<code>0x804946d</code>处<code>test</code>指令执行之前，寄存器EAX的值应为0,同时可以判断出<code>pushl</code>处是用户输入的字符串地址，<code>push</code>处是内部保存的字符串地址，所以需要满足<code>pushl</code>处输入的和<code>push</code>处的字符串相同。</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/11-49-21-20220605114920-87ced2.png"></p>
+<p><strong>功能说明</strong>：如果输入的两个字符串参数的内容相同，strings_not_equal函数将返回0，则在示例汇编代码中，test指令测试时，将使得je指令跳转到程序的正常结束位置。</p>
+<p>否则引爆炸弹</p>
+<p><strong>分析strings_not_equal函数的控制逻辑</strong></p>
+<p>分析汇编代码可知：该函数在输入的两个字符串参数的长度和内容均相同时将返回0，否则返回1，并且返回值保存于EAX寄存器中</p>
+<figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">08049c61</span> &lt;strings_not_equal&gt;:</span><br><span class="line"> <span class="attribute">8049c61</span>:       <span class="number">55</span>                      push   %ebp</span><br><span class="line"> <span class="attribute">8049c62</span>:       <span class="number">89</span> e5                   mov    %esp,%ebp</span><br><span class="line"> <span class="attribute">8049c64</span>:       <span class="number">53</span>                      push   %ebx</span><br><span class="line"> <span class="attribute">8049c65</span>:       <span class="number">83</span> ec <span class="number">10</span>                sub    $<span class="number">0</span>x10,%esp</span><br><span class="line"> <span class="attribute">8049c68</span>:       ff <span class="number">75</span> <span class="number">08</span>                pushl  <span class="number">0</span>x8(%ebp)</span><br><span class="line"> <span class="attribute">8049c6b</span>:       e8 c5 ff ff ff          call   <span class="number">8049</span>c35 &lt;string_length&gt;</span><br><span class="line"> <span class="attribute">8049c70</span>:       <span class="number">83</span> c4 <span class="number">04</span>                add    $<span class="number">0</span>x4,%esp</span><br><span class="line"> <span class="attribute">8049c73</span>:       <span class="number">89</span> c3                   mov    %eax,%ebx</span><br><span class="line"> <span class="attribute">8049c75</span>:       ff <span class="number">75</span> <span class="number">0</span>c                pushl  <span class="number">0</span>xc(%ebp)</span><br><span class="line"> <span class="attribute">8049c78</span>:       e8 b8 ff ff ff          call   <span class="number">8049</span>c35 &lt;string_length&gt;</span><br><span class="line"> <span class="attribute">8049c7d</span>:       <span class="number">83</span> c4 <span class="number">04</span>                add    $<span class="number">0</span>x4,%esp</span><br><span class="line"> <span class="attribute">8049c80</span>:       <span class="number">39</span> c3                   cmp    %eax,%ebx</span><br><span class="line"> <span class="attribute">8049c82</span>:       <span class="number">74</span> <span class="number">07</span>                   je     <span class="number">8049</span>c8b &lt;strings_not_equal+<span class="number">0</span>x2a&gt;</span><br><span class="line"> <span class="attribute">8049c84</span>:       b8 <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span>          mov    $<span class="number">0</span>x1,%eax</span><br><span class="line"> <span class="attribute">8049c89</span>:       eb <span class="number">3</span>c                   jmp    <span class="number">8049</span>cc7 &lt;strings_not_equal+<span class="number">0</span>x66&gt;</span><br><span class="line"> <span class="attribute">8049c8b</span>:       <span class="number">8</span>b <span class="number">45</span> <span class="number">08</span>                mov    <span class="number">0</span>x8(%ebp),%eax</span><br><span class="line"> <span class="attribute">8049c8e</span>:       <span class="number">89</span> <span class="number">45</span> f8                mov    %eax,-<span class="number">0</span>x8(%ebp)</span><br><span class="line"> <span class="attribute">8049c91</span>:       <span class="number">8</span>b <span class="number">45</span> <span class="number">0</span>c                mov    <span class="number">0</span>xc(%ebp),%eax</span><br><span class="line"> <span class="attribute">8049c94</span>:       <span class="number">89</span> <span class="number">45</span> f4                mov    %eax,-<span class="number">0</span>xc(%ebp)</span><br><span class="line"> <span class="attribute">8049c97</span>:       eb <span class="number">1</span>f                   jmp    <span class="number">8049</span>cb8 &lt;strings_not_equal+<span class="number">0</span>x57&gt;</span><br><span class="line"> <span class="attribute">8049c99</span>:       <span class="number">8</span>b <span class="number">45</span> f8                mov    -<span class="number">0</span>x8(%ebp),%eax</span><br><span class="line"> <span class="attribute">8049c9c</span>:       <span class="number">0</span>f b6 <span class="number">10</span>                movzbl (%eax),%edx</span><br><span class="line"> <span class="attribute">8049c9f</span>:       <span class="number">8</span>b <span class="number">45</span> f4                mov    -<span class="number">0</span>xc(%ebp),%eax</span><br><span class="line"> <span class="attribute">8049ca2</span>:       <span class="number">0</span>f b6 <span class="number">00</span>                movzbl (%eax),%eax</span><br><span class="line"> <span class="attribute">8049ca5</span>:       <span class="number">38</span> c2                   cmp    %al,%dl</span><br><span class="line"> <span class="attribute">8049ca7</span>:       <span class="number">74</span> <span class="number">07</span>                   je     <span class="number">8049</span>cb0 &lt;strings_not_equal+<span class="number">0</span>x4f&gt;</span><br><span class="line"> <span class="attribute">8049ca9</span>:       b8 <span class="number">01</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span>          mov    $<span class="number">0</span>x1,%eax</span><br><span class="line"> <span class="attribute">8049cae</span>:       eb <span class="number">17</span>                   jmp    <span class="number">8049</span>cc7 &lt;strings_not_equal+<span class="number">0</span>x66&gt;</span><br><span class="line"> <span class="attribute">8049cb0</span>:       <span class="number">83</span> <span class="number">45</span> f8 <span class="number">01</span>             addl   $<span class="number">0</span>x1,-<span class="number">0</span>x8(%ebp)</span><br><span class="line"> <span class="attribute">8049cb4</span>:       <span class="number">83</span> <span class="number">45</span> f4 <span class="number">01</span>             addl   $<span class="number">0</span>x1,-<span class="number">0</span>xc(%ebp)</span><br><span class="line"> <span class="attribute">8049cb8</span>:       <span class="number">8</span>b <span class="number">45</span> f8                mov    -<span class="number">0</span>x8(%ebp),%eax</span><br><span class="line"> <span class="attribute">8049cbb</span>:       <span class="number">0</span>f b6 <span class="number">00</span>                movzbl (%eax),%eax</span><br><span class="line"> <span class="attribute">8049cbe</span>:       <span class="number">84</span> c0                   test   %al,%al</span><br><span class="line"> <span class="attribute">8049cc0</span>:       <span class="number">75</span> d7                   jne    <span class="number">8049</span>c99 &lt;strings_not_equal+<span class="number">0</span>x38&gt;</span><br><span class="line"> <span class="attribute">8049cc2</span>:       b8 <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span>          mov    $<span class="number">0</span>x0,%eax</span><br><span class="line"> <span class="attribute">8049cc7</span>:       <span class="number">8</span>b <span class="number">5</span>d fc                mov    -<span class="number">0</span>x4(%ebp),%ebx</span><br><span class="line"> <span class="attribute">8049cca</span>:       c9                      leave</span><br><span class="line"> <span class="attribute">8049ccb</span>:       c3                      ret</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-定位并获得内置字符串的值，并相应构造输入字符串"><a href="#3-定位并获得内置字符串的值，并相应构造输入字符串" class="headerlink" title="3.定位并获得内置字符串的值，并相应构造输入字符串"></a>3.定位并获得内置字符串的值，并相应构造输入字符串</h2><p>前面已推断出：和用户输入字符串相比较的程序内置字符串的存储地址为<code>0x804a1e0</code>，并且两个字符串的内容应相同，因此可使用gdb查看地址<code>0x804a1e0</code>中存储的内置字符串的内容：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ics@debian:~/test/bomlab$ gdb bomb</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">断点设置到phase_0函数中调用strings_not_equal函数的call指令的位置</span></span><br><span class="line">(gdb) b *0x8049465</span><br><span class="line">Breakpoint 1 at 0x8049465</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/ics/test/bomlab/bomb</span><br><span class="line">Welcome to my fiendish little bomb. You have 7 phases with</span><br><span class="line">which to blow yourself up. Have a nice day!</span><br><span class="line">fdafada（这里先随意输入一些字符串）</span><br><span class="line"></span><br><span class="line">Breakpoint 1, 0x08049465 in phase_0 ()</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">查看50个字节的内容，每个字节内容作为字符输出</span></span><br><span class="line">(gdb)x/50c 0x804a1e0</span><br><span class="line">0x804a1e0:	65 &#x27;A&#x27;	32 &#x27; &#x27;	116 &#x27;t&#x27;	101 &#x27;e&#x27;	120 &#x27;x&#x27;	116 &#x27;t&#x27;	32 &#x27; &#x27;	108 &#x27;l&#x27;</span><br><span class="line">0x804a1e8:	105 &#x27;i&#x27;	110 &#x27;n&#x27;	101 &#x27;e&#x27;	32 &#x27; &#x27;	105 &#x27;i&#x27;	115 &#x27;s&#x27;	32 &#x27; &#x27;	97 &#x27;a&#x27;</span><br><span class="line">0x804a1f0:	32 &#x27; &#x27;	115 &#x27;s&#x27;	101 &#x27;e&#x27;	113 &#x27;q&#x27;	117 &#x27;u&#x27;	101 &#x27;e&#x27;	110 &#x27;n&#x27;	99 &#x27;c&#x27;</span><br><span class="line">0x804a1f8:	101 &#x27;e&#x27;	32 &#x27; &#x27;	111 &#x27;o&#x27;	102 &#x27;f&#x27;	32 &#x27; &#x27;	65 &#x27;A&#x27;	83 &#x27;S&#x27;	67 &#x27;C&#x27;</span><br><span class="line">0x804a200:	73 &#x27;I&#x27;	73 &#x27;I&#x27;	32 &#x27; &#x27;	99 &#x27;c&#x27;	104 &#x27;h&#x27;	97 &#x27;a&#x27;	114 &#x27;r&#x27;	97 &#x27;a&#x27;</span><br><span class="line">0x804a208:	99 &#x27;c&#x27;	116 &#x27;t&#x27;	101 &#x27;e&#x27;	114 &#x27;r&#x27;	115 &#x27;s&#x27;	46 &#x27;.&#x27;	0 &#x27;\000&#x27;	37 &#x27;%&#x27;</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">直接输出的方式</span></span><br><span class="line">(gdb)x/1s 0x804a1e0</span><br><span class="line">0x804a1e0:	&quot;A text line is a sequence of ASCII characters.&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-测试"><a href="#4-测试" class="headerlink" title="4.测试"></a>4.测试</h3><p>随意输入的结果</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ics@debian:~/test/bomlab$ ./bomb</span><br><span class="line">Welcome to my fiendish little bomb. You have 7 phases with</span><br><span class="line">which to blow yourself up. Have a nice day!</span><br><span class="line">asdfa</span><br><span class="line"></span><br><span class="line">BOOM!!!</span><br><span class="line">The bomb has blown up.</span><br></pre></td></tr></table></figure>
+
+<p>输入获取到的字符串</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ics@debian:~/test/bomlab$ ./bomb</span><br><span class="line">Welcome to my fiendish little bomb. You have 7 phases with</span><br><span class="line">which to blow yourself up. Have a nice day!</span><br><span class="line">A text line is a sequence of ASCII characters.</span><br><span class="line">Well done! You seem to have warmed up!</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="阶段-1：浮点数表示"><a href="#阶段-1：浮点数表示" class="headerlink" title="阶段 1：浮点数表示"></a>阶段 1：浮点数表示</h1><p><strong>阶段说明：该阶段要求输入对应某浮点（float或double）数值表示的一对整数（short或int）</strong></p>
+<h2 id="IEEE-754标准"><a href="#IEEE-754标准" class="headerlink" title="IEEE 754标准"></a>IEEE 754标准</h2><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/15-35-02-20220605153501-024294.png"></p>
+<h2 id="X87浮点指令-MMX和SSE指令"><a href="#X87浮点指令-MMX和SSE指令" class="headerlink" title="X87浮点指令(MMX和SSE指令)"></a>X87浮点指令(MMX和SSE指令)</h2><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/15-37-16-20220605153716-78b8b4.png"></p>
+<h2 id="X87-FPU指令"><a href="#X87-FPU指令" class="headerlink" title="X87 FPU指令"></a>X87 FPU指令</h2><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/15-38-38-20220605153837-26637b.png"></p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/15-39-04-20220605153903-32a9f2.png"></p>
+<p>实验步骤：</p>
+<h2 id="1-对本阶段函数的汇编指令代码进行分析"><a href="#1-对本阶段函数的汇编指令代码进行分析" class="headerlink" title="1.对本阶段函数的汇编指令代码进行分析"></a>1.对本阶段函数的汇编指令代码进行分析</h2><p>定位到<code>phase_1</code>函数上</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/16-07-32-20220605160731-86122e.png"></p>
+<h2 id="2-找到浮点数常量的值，获得其IEEE-754表示"><a href="#2-找到浮点数常量的值，获得其IEEE-754表示" class="headerlink" title="2.找到浮点数常量的值，获得其IEEE-754表示"></a>2.找到浮点数常量的值，获得其IEEE-754表示</h2><figure class="highlight llvm"><table><tr><td class="code"><pre><span class="line"><span class="number">08049484</span> &lt;phase_<span class="number">1</span>&gt;:</span><br><span class="line"> <span class="number">8049484</span>:       <span class="number">55</span>                      push   <span class="variable">%ebp</span></span><br><span class="line"> <span class="number">8049485</span>:       <span class="number">89</span> e<span class="number">5</span>                   mov    <span class="variable">%esp</span><span class="punctuation">,</span><span class="variable">%ebp</span></span><br><span class="line"> <span class="number">8049487</span>:       <span class="number">83</span> ec <span class="number">28</span>                <span class="keyword">sub</span>    $<span class="number">0x28</span><span class="punctuation">,</span><span class="variable">%esp</span></span><br><span class="line"> <span class="number">804948</span>a:       <span class="keyword">c</span><span class="number">7</span> <span class="number">45</span> f<span class="number">4</span> a<span class="number">1</span> <span class="number">84</span> <span class="number">76</span> <span class="number">09</span>    movl   $<span class="number">0x97684a1</span><span class="punctuation">,</span><span class="number">-0</span>xc(<span class="variable">%ebp</span>)</span><br><span class="line"> <span class="number">8049491</span>:       db <span class="number">45</span> f<span class="number">4</span>                fildl  <span class="number">-0</span>xc(<span class="variable">%ebp</span>)</span><br><span class="line"> <span class="number">8049494</span>:       dd <span class="number">5</span>d e<span class="number">8</span>                fstpl  <span class="number">-0</span><span class="keyword">x</span><span class="number">18</span>(<span class="variable">%ebp</span>)</span><br><span class="line"> ...</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>从中可看出，整型值<code>0x97684a1</code>通过浮点栈被转为<strong>双精度</strong>浮点表示，并传送到本阶段函数栈帧中地址为**-0x18(%ebp)**处开始连续存放</li>
+<li>从课程内容可知，该常量值的双精度（double）IEEE 754表示为（十六进制字节串）：41 A2 ED 09 42 0 0 0  </li>
+</ul>
+<h2 id="3-分析程序的输入要求和比较逻辑"><a href="#3-分析程序的输入要求和比较逻辑" class="headerlink" title="3.分析程序的输入要求和比较逻辑"></a>3.分析程序的输入要求和比较逻辑</h2><figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">8049497</span>:       <span class="number">8</span>d <span class="number">45</span> e0                lea    -<span class="number">0</span>x20(%ebp),%eax</span><br><span class="line"> <span class="attribute">804949a</span>:       <span class="number">50</span>                      push   %eax</span><br><span class="line"> <span class="attribute">804949b</span>:       <span class="number">8</span>d <span class="number">45</span> e4                lea    -<span class="number">0</span>x1c(%ebp),%eax</span><br><span class="line"> <span class="attribute">804949e</span>:       <span class="number">50</span>                      push   %eax</span><br><span class="line"> <span class="attribute">804949f</span>:       <span class="number">68</span> <span class="number">0</span>f a2 <span class="number">04</span> <span class="number">08</span>          push   $<span class="number">0</span>x804a20f</span><br><span class="line"> <span class="attribute">80494a4</span>:       ff <span class="number">75</span> <span class="number">08</span>                pushl  <span class="number">0</span>x8(%ebp)</span><br><span class="line"> <span class="attribute">80494a7</span>:       e8 <span class="number">24</span> fc ff ff          call   <span class="number">80490</span>d0 &lt;__isoc99_sscanf@plt&gt;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>输入拆解字符串的解析调用了sscanf函数，</p>
+<p>其原型如下：</p>
+<ul>
+<li>int sscanf ( const char * s, const char * format, …);</li>
+<li>返回从第一个输入字符串中成功扫描，读入的数据项的个数</li>
+</ul>
+</li>
+<li><p>输入格式字符串起始地址位于<code>0x804a20f</code>，可使用gdb查看存放于该处的值</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) x/1s 0x804a20f</span><br><span class="line">0x804a20f:	&quot;%d %d&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>可见，输入的应是空格分隔的两个整数</p>
+<ul>
+<li>（参考sscanf调用时参数压栈顺序）分别存储于-0x1c(%ebp)(第二个压栈的参数)、-0x20(%ebp)(第一个压栈的参数)</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/16-47-55-20220605164755-9db933.png"></p>
+<ul>
+<li><p>变量及其存储地址</p>
+<ol>
+<li>-0x18(%ebp)：浮点数</li>
+<li>-0x1c(%ebp) ：第1个输入整数</li>
+<li>-0x20(%ebp) ：第2个输入整数</li>
+</ol>
+</li>
+<li><p><code>0x80494c0-c1</code>处比较了第1个输入整数与浮点数起始存储地址处（小端表示中是其低32位）整数是否相等</p>
+</li>
+<li><p><code>80494cc-d9</code>处比较了第2个输入整数与浮点数高4个字节存储地址处（小端表示中是其高32位）整数是否相等</p>
+</li>
+<li><p>因此，输入字符串中应包含分别对应该浮点数表示低32位的整数和高32位的整数</p>
+</li>
+</ul>
+<h2 id="4-基于上述结果，构造输入字符串"><a href="#4-基于上述结果，构造输入字符串" class="headerlink" title="4.基于上述结果，构造输入字符串"></a>4.基于上述结果，构造输入字符串</h2><p>整型值<code>0x97684a1</code>对应的双精度浮点数的IEEE 754表示为（十六进制字节串，从高位到低位）：</p>
+<p>41 A2 ED 09 42 00 00 00  </p>
+<ul>
+<li><p>低32位（从高位到低位）并转为十进制有符号整数：</p>
+<p>42 00 00 00 = 1107296256</p>
+</li>
+<li><p>高32位（从高位到低位）并转为十进制有符号整数：</p>
+<p>41 A2 ED 09 = 1101196553</p>
+</li>
+<li><p>因此拆解字节串应为“1107296256 1101196553”</p>
+</li>
+</ul>
+<p><strong>IDA反汇编的结果是</strong></p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/08/22-30-37-20220608223037-cd3847.png"></p>
+<h1 id="阶段-2：循环"><a href="#阶段-2：循环" class="headerlink" title="阶段 2：循环"></a>阶段 2：循环</h1><blockquote>
+<p>输入满足程序所期望的顺序和取值的一个数字序列</p>
+</blockquote>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/05/23-49-50-20220605234949-b99942.png"></p>
+<p>分析结果如上</p>
+<p>发现<code>push   $0x9</code>表示数组中有9个数</p>
+<p>通过<code>cmp    $0x86,%eax</code>判断出第一个数是134</p>
+<p>从<code>0x804951c</code>开始进入循环，<code>0x8049555</code>处进行比较，其中eax是期望的结果，edx是我们输入的结果</p>
+<p><strong>通过断点调试</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) b *0x8049555</span><br><span class="line">(gdb) r</span><br><span class="line">(gdb) i r</span><br><span class="line">eax            0x85                133</span><br><span class="line">ecx            0x86                134</span><br><span class="line">edx            0x85                133</span><br><span class="line">ebx            0x1                 1</span><br></pre></td></tr></table></figure>
+
+<p>可以通过逐步调试得到结果，也可以发现汇编指令的计算方式满足下面形式</p>
+<blockquote>
+<p>系统生成的eax中的结果满足：Array[i - 1] - 2 * i + 1</p>
+</blockquote>
+<p>最终结果可以通过<a href="https://c.runoob.com/compile/10/">这个网站</a>在线编程计算最终结果。</p>
+<blockquote>
+<p>134 133 130 125 118 109 98 85 70</p>
+</blockquote>
+<p><strong>IDA反汇编的结果是</strong></p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/08/22-29-41-20220608222941-3af148.png"></p>
+<h1 id="阶段-3：条件-分支"><a href="#阶段-3：条件-分支" class="headerlink" title="阶段 3：条件/分支"></a>阶段 3：条件/分支</h1><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/06/12-27-59-%7DK_%7BW%7BC-7HRI3%606%60KS%609DP9-cf53b5.png"></p>
+<p>发现<code>push  $0x804a20f</code>指令，我们可以查看其中的内容</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) b phase_3</span><br><span class="line">(gdb) r</span><br><span class="line">...</span><br><span class="line">(gdb) si</span><br><span class="line">0x0804959a in phase_3 ()</span><br><span class="line">(gdb) x/1s 0x804a20f</span><br><span class="line">0x804a20f:	&quot;%d %d&quot;</span><br></pre></td></tr></table></figure>
+
+<p>发现是两个参数，所以可以确定输入的是两个数</p>
+<p>演示就先输入1 2然后进行调试，当执行到<code>sub  $0xfe,%eax</code>处时，发现<code>eax</code>的值需要做减操作，而<code>0xfe</code>的值是254，<code>eax</code>的值是1，所以sub之后<code>eax</code>值为-253，往下进行，是<code>cmp</code>指令，判断9和<code>eax</code>的大小，<code>ja</code>指令表示无符号大于就跳转，<code>jb</code>表示小于就跳转，所以，如果<code>eax &gt; 9 </code>,就会执行ja跳转到804962d，发生爆炸。<code>jg</code>表示有符号大于</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80495c0:       sub    $0xfe,%eax   //eax = eax - 0xfe(254) = -253</span><br><span class="line">80495c5:       cmp    $0x9,%eax    //9 &gt; eax 爆炸 ja是大于</span><br><span class="line">80495c8:       ja     804962d &lt;phase_3+0xb4&gt; //爆炸</span><br></pre></td></tr></table></figure>
+
+<p>所以为了继续执行，需要满足<code>eax &lt;= 9</code>,这里先拿9来测试，所以得出在<code>sub</code>之前的<code>eax = 263</code>，<strong>也就是输入的第一个参数的值</strong>，接着继续执行，到达下面这行，也就是说第一个参数满足条件的情况下会<code>eax</code>赋一个地址值，接着执行</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80495ca:    mov    0x804a218(,%eax,4),%eax //eax = 134521368</span><br></pre></td></tr></table></figure>
+
+<p>执行下面的<code>jmp</code>指令之后跳转到<code>0x08049624</code>处，这里对<code>-0xc(%ebp)</code>进行了赋值，<code>3e5 = 997</code></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049624:    movl   $0x3e5,-0xc(%ebp)//ebp = 3e5 = 997</span><br><span class="line">804962b:    jmp    8049639 &lt;phase_3+0xc0&gt;</span><br></pre></td></tr></table></figure>
+
+<p>接着<code>jmp</code>跳转到<code>0x8049639</code>处，这里首先<code>mov</code>指令将我们输入的第二个数赋给了<code>eax</code>，<code>cmp</code>指令对<code>%eax和-0xc(%ebp)</code>的值进行比较，<code>je表示Jump if Equals</code>所以如果这两个值相等就满足条件，所以<code>eax</code>的值就应该是997</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049639:    mov    -0x18(%ebp),%eax</span><br><span class="line">804963c:	cmp    %eax,-0xc(%ebp)</span><br><span class="line">804963f:    je     804964d &lt;phase_3+0xd4&gt;</span><br></pre></td></tr></table></figure>
+
+<p><strong>IDA反汇编的结果是</strong></p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/08/R5$71RI@[LTY9T]~8Y1_27Q.png"></p>
+<h1 id="阶段-4：递归调用和栈"><a href="#阶段-4：递归调用和栈" class="headerlink" title="阶段 4：递归调用和栈"></a>阶段 4：递归调用和栈</h1><p><strong>没有理解！！！</strong></p>
+<p>首先定位到下面这行，发现这里有一个地址，可以看看值是什么</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80496f9:      push   $0x804a20f</span><br></pre></td></tr></table></figure>
+
+<p>发现内容是两个整形的值，这就表示需要输入两个值</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) b *0x80496f9</span><br><span class="line">(gdb) r res.txt</span><br><span class="line">(gdb) x/1s 0x804a20f</span><br><span class="line">0x804a20f:	&quot;%d %d&quot;</span><br></pre></td></tr></table></figure>
+
+<p>接着往下，输入参数之后就会去调用<code>func4</code>，<code>func4</code>就是一个递归函数，看了半天也没搞命名<code>func4</code>的逻辑，只好用IDA来进行反汇编，可以看到phase_4的反汇编结果</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/08/11-03-18-20220608110317-c08ab5.png"></p>
+<p>这里的v5的含义就是我们输入参数的个数，需要判断它是否输入的是两个数，然后是三个递归条件，这里就需要明白v2，v3，v4的含义了，接着看看func4的反汇编结果</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/08/11-05-56-20220608110556-2d71e2.png"></p>
+<p>然后再看phase_4的前面的这两行</p>
+<figure class="highlight mel"><table><tr><td class="code"><pre><span class="line"><span class="number">80496</span>d9:   mov    $0x804a240,%ebx</span><br><span class="line"><span class="number">80496</span>de:   mov    $0x24,%edx <span class="comment">//edx = 0x24(36)</span></span><br></pre></td></tr></table></figure>
+
+<p>这两行的意思是说，先开辟了一段空间，然后放一个数组进去，长度是0x24也就是36.</p>
+<p>然后执行到下面这一行发现,<code>ecx</code>的值是从36一直递减到0的</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80496e9:  rep movsl %ds:(%esi),%es:(%edi)</span><br></pre></td></tr></table></figure>
+
+<p>再往后会发现有两个比较，0和34，同时还有判断是否不等于456</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049784:      cmp    $0x1c8,%eax//eax != 456 ?</span><br><span class="line">8049789:      jne    8049797 &lt;phase_4+0xd0&gt;//不等于则跳转</span><br></pre></td></tr></table></figure>
+
+<p>这个先搁置吧，在网上也没找到和我这个一样的， 其他很多都是有比较的指令，感觉比我碰到的这个都要简单些。</p>
+<h1 id="阶段-5：指针"><a href="#阶段-5：指针" class="headerlink" title="阶段 5：指针"></a>阶段 5：指针</h1><p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/09/10-58-16--C6MVT-%7B-%606-BL%60A36IPDUN-444e1c.png"></p>
+<p>首先发现push指令处有一个地址</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80497f3:   push   $0x804a20f</span><br></pre></td></tr></table></figure>
+
+<p>查看这个位置的内容,发现需要输入的是两个数</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) x/1s 0x804a20f</span><br><span class="line">0x804a20f:	&quot;%d %d&quot;</span><br></pre></td></tr></table></figure>
+
+<p>再往下看，发现这是一个循环结构</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049831:     addl   $0x1,-0xc(%ebp) //</span><br><span class="line">8049835:     mov    -0x18(%ebp),%eax</span><br><span class="line">8049838:     mov    0x804c200(,%eax,4),%eax //eax = eax*4+0x804c200</span><br><span class="line">804983f:     mov    %eax,-0x18(%ebp)</span><br><span class="line">8049842:     mov    -0x18(%ebp),%eax</span><br><span class="line">8049845:     add    %eax,-0x10(%ebp)</span><br><span class="line">8049848:     mov    -0x18(%ebp),%eax</span><br><span class="line">804984b:     cmp    $0xf,%eax</span><br><span class="line">804984e:     jne    8049831 &lt;phase_5+0x4c&gt;</span><br></pre></td></tr></table></figure>
+
+<p>看了半天没理清楚😶，还是使用IDA进行反编译看看结果吧</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/09/10-34-25-20220609103424-40c87a.png"></p>
+<p>这样就清楚了，可以发现，这个循环的条件是<code>v3 != 15</code>,然后后面还有一个数组的赋值操作<code>v3 = array_2751[v3]</code>,这里的数组长度是16，但是我们还是不知道这个数组里面的值是多少，但是可以看出来这个循环中v3的结果是根据数组的值进行变化的，所以我就想到会不会是这种情况，索引0处值为1，索引1处值为2…这种形式，当然，可以输入结果进行测试，因为条件是v3不等于15，而v3就是我们输入的第一个值，v2暂时可以随意输入，所以输入0 1进行测试</p>
+<p>到达这个循环里，下面这一句就对应了++v6的操作</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049831:  addl   $0x1,-0xc(%ebp) //</span><br></pre></td></tr></table></figure>
+
+<p>然后下面这几句的就是对v3赋值的过程</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049835:   mov    -0x18(%ebp),%eax</span><br><span class="line">8049838:   mov    0x804c200(,%eax,4),%eax //eax = eax*4+0x804c200</span><br><span class="line">804983f:   mov    %eax,-0x18(%ebp)</span><br><span class="line">8049842:   mov    -0x18(%ebp),%eax</span><br></pre></td></tr></table></figure>
+
+<p>结束后发现<code>eax</code>的值变成了10，那意思就是说数组中的索引0处的内容就是10，如果要进行下一次循环的话，就该读取索引10处的内容了，然后就是这样一个逻辑，就可以推出后面的值了，当<code>v3==15</code>的时候就会跳出循环</p>
+<p>接着会去判断<code>v6==6</code>和<code>v5==v2</code>，从循环处可以发现v6每一次进入循环都会有自增的操作，而v5也是在每一次的循环过程中去进行加操作的，所以拿到v5的值就相当于知道了v2的值了，下面有两个cmp的操作，就是在进行比较</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049850:    cmpl   $0x6,-0xc(%ebp) //-0xc(%ebp) == 6 ?</span><br><span class="line">8049854:    jne    804985e &lt;phase_5+0x79&gt;</span><br><span class="line">8049856:    mov    -0x1c(%ebp),%eax</span><br><span class="line">8049859:    cmp    %eax,-0x10(%ebp)</span><br><span class="line">804985c:  	 je     804986a &lt;phase_5+0x85&gt;</span><br><span class="line">804985e:    call   8049ec9 &lt;explode_bomb&gt;</span><br></pre></td></tr></table></figure>
+
+<p>可以在执行完<code>8049859: cmp %eax,-0x10(%ebp)</code>之后查看一下<code>-0x10(%ebp)</code>中的值,这里拿到的<code>0x00000030</code>换算成十进制就是48，所以第二个参数就是48</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) x $ebp-16</span><br><span class="line">0xbffff5a8:	0x00000030</span><br></pre></td></tr></table></figure>
+
+<p>当然，我这种方式是运气好一开始就使用0作为第一个参数来测试的，如果使用的其他值就需要一步一步推出来其他的值，因为其中有一个数组，那就可以输入小于15的值来确定每一个位置的值是多少，我这里得到了数组中所有的值</p>
+<figure class="highlight tap"><table><tr><td class="code"><pre><span class="line">索引 0	1  <span class="number"> 2 </span> <span class="number"> 3 </span><span class="number"> 4 </span> <span class="number"> 5 </span> <span class="number"> 6 </span> <span class="number"> 7 </span><span class="number"> 8 </span><span class="number"> 9 </span> <span class="number"> 10 </span><span class="number"> 11 </span> <span class="number"> 12 </span><span class="number"> 13 </span>14    </span><br><span class="line">值	10	<span class="number"> 2 </span><span class="number"> 14 </span> <span class="number"> 7 </span><span class="number"> 8 </span><span class="number"> 12 </span><span class="number"> 15 </span><span class="number"> 11 </span><span class="number"> 0 </span><span class="number"> 4 </span> <span class="number"> 1 </span> <span class="number"> 13 </span> <span class="number"> 3 </span> <span class="number"> 9 </span> 6</span><br></pre></td></tr></table></figure>
+
+<p>然后就可以得到所有的循环结果,但是因为最终跳出循环的结果是v3=15，所以满足条件的就只有第一个也就是0 48</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0: 10  1   2   14  6   15 sum=48</span><br><span class="line">1: 2   14  6   15  x</span><br><span class="line">2: 14  6   15  x</span><br><span class="line">3: 7   11  13  9   4   8  </span><br><span class="line">4: 8   0   10  1   2   14 </span><br><span class="line">5: 12  3   7   11  13  9  </span><br><span class="line">6: 15 x</span><br><span class="line">7: 11  13  9   4   8   0  </span><br><span class="line">8: 0   10  1   2   14  6  </span><br><span class="line">9: 4   8   0   10  1   2  </span><br><span class="line">10:1   2   14  6   15 x</span><br><span class="line">11:13  9   4   8   0   10 </span><br><span class="line">12:3   7   11  13  9   4  </span><br><span class="line">13:9   4   8   0   10  1  </span><br><span class="line">14:6   15 x</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="阶段-6：链表-指针-结构"><a href="#阶段-6：链表-指针-结构" class="headerlink" title="阶段 6：链表/指针/结构"></a>阶段 6：链表/指针/结构</h1><p>这个部分有一大堆的代码，很长…</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/09/20-11-21-20220609201120-0245ff.png"></p>
+<p>要求应该是输入多个数，因为在里面调用了另外一个函数<code>read_n_numbers</code>，这里会读取输入的数，使用IDA进行反汇编之后就能知道函数的内容了，里面调用了strtok函数，就是对字符串进行分解</p>
+<p><img src="https://gcore.jsdelivr.net/gh/zsxfa/CDN/img/md/2022/06/09/16-11-48-20220609161148-a534a5.png"></p>
+<p>下面看看第一个循环</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80498a0:       c7 45 f0 00 00 00 00    movl   $0x0,-0x10(%ebp)</span><br><span class="line">80498a7:       eb 60                   jmp    8049909 &lt;phase_6+0x98&gt;</span><br><span class="line">80498a9:       8b 45 f0                mov    -0x10(%ebp),%eax</span><br><span class="line">80498ac:       8b 44 85 cc             mov    -0x34(%ebp,%eax,4),%eax</span><br><span class="line">80498b0:       85 c0                   test   %eax,%eax</span><br><span class="line">80498b2:       7e 0c                   jle    80498c0 &lt;phase_6+0x4f&gt;</span><br><span class="line">80498b4:       8b 45 f0                mov    -0x10(%ebp),%eax</span><br><span class="line">80498b7:       8b 44 85 cc             mov    -0x34(%ebp,%eax,4),%eax</span><br><span class="line">80498bb:       83 f8 07                cmp    $0x7,%eax</span><br><span class="line">80498be:       7e 0f                   jle    80498cf &lt;phase_6+0x5e&gt;</span><br><span class="line">80498c0:       e8 04 06 00 00          call   8049ec9 &lt;explode_bomb&gt;</span><br><span class="line">80498c5:       b8 00 00 00 00          mov    $0x0,%eax</span><br><span class="line">80498ca:       e9 08 01 00 00          jmp    80499d7 &lt;phase_6+0x166&gt;</span><br><span class="line">80498cf:       8b 45 f0                mov    -0x10(%ebp),%eax</span><br><span class="line">80498d2:       83 c0 01                add    $0x1,%eax</span><br><span class="line">80498d5:       89 45 ec                mov    %eax,-0x14(%ebp)</span><br><span class="line">80498d8:       eb 25                   jmp    80498ff &lt;phase_6+0x8e&gt;</span><br><span class="line">----------------</span><br><span class="line">80498da:       8b 45 f0                mov    -0x10(%ebp),%eax</span><br><span class="line">80498dd:       8b 54 85 cc             mov    -0x34(%ebp,%eax,4),%edx</span><br><span class="line">80498e1:       8b 45 ec                mov    -0x14(%ebp),%eax</span><br><span class="line">80498e4:       8b 44 85 cc             mov    -0x34(%ebp,%eax,4),%eax</span><br><span class="line">80498e8:       39 c2                   cmp    %eax,%edx</span><br><span class="line">80498ea:       75 0f                   jne    80498fb &lt;phase_6+0x8a&gt;</span><br><span class="line">80498ec:       e8 d8 05 00 00          call   8049ec9 &lt;explode_bomb&gt;</span><br><span class="line">80498f1:       b8 00 00 00 00          mov    $0x0,%eax</span><br><span class="line">80498f6:       e9 dc 00 00 00          jmp    80499d7 &lt;phase_6+0x166&gt;</span><br><span class="line">80498fb:       83 45 ec 01             addl   $0x1,-0x14(%ebp)</span><br><span class="line">80498ff:       83 7d ec 06             cmpl   $0x6,-0x14(%ebp)</span><br><span class="line">8049903:       7e d5                   jle    80498da &lt;phase_6+0x69&gt;</span><br><span class="line">------------------</span><br><span class="line">8049905:       83 45 f0 01             addl   $0x1,-0x10(%ebp)</span><br><span class="line">8049909:       83 7d f0 06             cmpl   $0x6,-0x10(%ebp)</span><br><span class="line">804990d:       7e 9a                   jle    80498a9 &lt;phase_6+0x38&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这些就是第一个循环的逻辑，根据逻辑变成c语言代码就是,可以发现其作用是判断输入的数是否大于0小于等于7，同时各个值不相等。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> n_numbers[<span class="number">7</span>] = &#123; <span class="comment">/* 我们输入的7个数 */</span> &#125;;</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt;= <span class="number">6</span>; ++i)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (six_numbers[i] &lt;= <span class="number">0</span> || six_numbers[i] &gt; <span class="number">7</span>)</span><br><span class="line">    explode_bomb();</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> j = i + <span class="number">1</span>; j &lt;= <span class="number">6</span>; ++j)</span><br><span class="line">    <span class="keyword">if</span> (six_numbers[i] == six_numbers[j])</span><br><span class="line">      explode_bomb();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面又是循环结构，不过有点复杂，懒得一行一行去分析了，直接到最后一个循环结构，发现前面这段代码</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">8049989:     mov    -0xc(%ebp),%eax</span><br><span class="line">804998c:     movl   $0x0,0x8(%eax) //v7[2]=0x8(%eax)=0 </span><br><span class="line">8049993:     mov    -0x18(%ebp),%eax //v7=%eax=0x804c130</span><br><span class="line">8049996:     mov    %eax,-0xc(%ebp)</span><br></pre></td></tr></table></figure>
+
+<p>这段代码通过IDA编译后发现是下面两句，应该是为了后面的循环中作为判断条件的</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">v7[2] = 0;</span><br><span class="line">v7 = v4;</span><br></pre></td></tr></table></figure>
+
+<p>接着看循环体内部，发现有一个<code>cmp</code>指令,下面的<code>jle</code>的作用是小于或等于，这里比较的内容其实就是上面两句中的参数。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">80499a2:    mov    -0xc(%ebp),%eax</span><br><span class="line">80499a5:    mov    (%eax),%edx</span><br><span class="line">80499a7:    mov    -0xc(%ebp),%eax</span><br><span class="line">80499aa:    mov    0x8(%eax),%eax</span><br><span class="line">80499ad:    mov    (%eax),%eax </span><br><span class="line">80499af:    cmp    %eax,%edx //比较</span><br><span class="line">80499b1:    jle    80499bf &lt;phase_6+0x14e&gt;</span><br><span class="line">80499b3:    call   8049ec9 &lt;explode_bomb&gt;</span><br></pre></td></tr></table></figure>
+
+<p>这里就使用GDB进行调试，查看参数的内容是什么，将断点设置到<code>0x8049993</code>处，查看其中的内容如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) x/4w $eax</span><br><span class="line">0x804c130 &lt;node1&gt;:	0x00000009	0x00000001	0x00000000	0x000003e9</span><br></pre></td></tr></table></figure>
+
+<p>发现有个node1的标识，其实这就是一个链表，同样可以推断出其他node的信息</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">0x804c130 &lt;node1&gt;:	0x00000009	0x00000001	0x0804c124	0x000003e9</span><br><span class="line">0x804c124 &lt;node2&gt;:	0x00000003	0x00000002	0x0804c118	0x00000009</span><br><span class="line">0x804c118 &lt;node3&gt;:	0x00000006	0x00000003	0x0804c10c	0x00000003</span><br><span class="line">0x804c10c &lt;node4&gt;:	0x00000007	0x00000004	0x0804c100	0x00000006</span><br><span class="line">0x804c100 &lt;node5&gt;:	0x00000000	0x00000005	0x0804c0f4	0x00000007</span><br><span class="line">0x804c0f4 &lt;node6&gt;:	0x00000002	0x00000006	0x0804c0e8	0x00000000</span><br><span class="line">0x804c0e8 &lt;node7&gt;:	0x00000005	0x00000007	0x00000000	0x00000002</span><br></pre></td></tr></table></figure>
+
+<p><code>0x804c130</code>结构体中的指针为<code>0x0804c124</code>，这个指针指向node2，同样node2中的指针指向node3 …最后一个node7中的指针指向地址0。</p>
+<p><strong>所以这个结构体为：</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">node</span>&#123;</span></span><br><span class="line">    <span class="type">int</span> val;<span class="comment">//这个暂不知道是什么数据 </span></span><br><span class="line">    <span class="type">int</span> id;<span class="comment">//id是编号 </span></span><br><span class="line">    node *next;	<span class="comment">//next是指向的node的地址</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再回到<code>cmp</code>指令，相当于排序的功能了，按照node上数值大小从小到大进行排列，也就是对<code>9(node1) 3(node2) 6(node3) 7(node4) 0(node5) 2(node6) 5(node7)</code>进行排序，结果是<code>node5&lt;node6&lt;node2&lt;node7&lt;node3&lt;node4&lt;node1</code></p>
+<p>所以输入的结果就是<code>5 6 2 7 3 4 1</code></p>
+]]></content>
+      <categories>
+        <category>interesting</category>
+      </categories>
+      <tags>
+        <tag>Bomb—Lab 汇编</tag>
+      </tags>
+  </entry>
 </search>
